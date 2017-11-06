@@ -73,10 +73,10 @@ class ObjectsDataset(utils.Dataset):
         # list of objects sizes and locations). This is more compact than
         # actual images. Images are generated on the fly in load_image().
         for i in range(count):
-            bg_color, objects = self.random_image(height, width)
+            bg_color, shapes = self.random_image(height, width)
             self.add_image("objects", image_id=i, path=None,
                            width=width, height=height,
-                           bg_color=bg_color, objects=objects)
+                           bg_color=bg_color, shapes=shapes)
 
     def load_image(self, image_id):
         """Generate an image from the specs of the given image ID.
@@ -88,7 +88,7 @@ class ObjectsDataset(utils.Dataset):
         bg_color = np.array(info['bg_color']).reshape([1, 1, 3])
         image = np.ones([info['height'], info['width'], 3], dtype=np.uint8)
         image = image * bg_color.astype(np.uint8)
-        for shape, color, dims in info['objects']:
+        for shape, color, dims in info['shapes']:
             image = self.draw_shape(image, shape, dims, color)
         return image
 
@@ -104,10 +104,10 @@ class ObjectsDataset(utils.Dataset):
         """Generate instance masks for objects of the given image ID.
         """
         info = self.image_info[image_id]
-        objects = info['objects']
-        count = len(objects)
+        shapes = info['shapes']
+        count = len(shapes)
         mask = np.zeros([info['height'], info['width'], count], dtype=np.uint8)
-        for i, (shape, _, dims) in enumerate(info['objects']):
+        for i, (shape, _, dims) in enumerate(info['shapes']):
             mask[:, :, i:i+1] = self.draw_shape(mask[:, :, i:i+1].copy(),
                                                 shape, dims, 1)
         # Handle occlusions
@@ -116,7 +116,7 @@ class ObjectsDataset(utils.Dataset):
             mask[:, :, i] = mask[:, :, i] * occlusion
             occlusion = np.logical_and(occlusion, np.logical_not(mask[:, :, i]))
         # Map class names to class IDs.
-        class_ids = np.array([self.class_names.index(s[0]) for s in objects])
+        class_ids = np.array([self.class_names.index("object") for s in shapes])
         return mask, class_ids.astype(np.int32)
 
     def draw_shape(self, image, shape, dims, color):
@@ -126,11 +126,11 @@ class ObjectsDataset(utils.Dataset):
 
         i = randint(0, 2)
 
-        if i == 0:
+        if shape == 'square':
             image = cv2.rectangle(image, (x-s, y-s), (x+s, y+s), color, -1)
-        elif i == 1:
+        elif shape == "circle":
             image = cv2.circle(image, (x, y), s, color, -1)
-        elif i == 2:
+        elif shape == "triangle":
             points = np.array([[(x, y-s),
                                 (x-s/math.sin(math.radians(60)), y+s),
                                 (x+s/math.sin(math.radians(60)), y+s),
@@ -148,7 +148,7 @@ class ObjectsDataset(utils.Dataset):
                             and location. Differs per shape type.
         """
         # Shape
-        shape = "object"
+        shape = random.choice(["square", "circle", "triangle"])
         # Color
         color = tuple([random.randint(0, 255) for _ in range(3)])
         # Center x, y
@@ -168,16 +168,16 @@ class ObjectsDataset(utils.Dataset):
         bg_color = np.array([random.randint(0, 255) for _ in range(3)])
         # Generate a few random objects and record their
         # bounding boxes
-        objects = []
+        shapes = []
         boxes = []
         N = random.randint(1, 4)
         for _ in range(N):
             shape, color, dims = self.random_shape(height, width)
-            objects.append((shape, color, dims))
+            shapes.append((shape, color, dims))
             x, y, s = dims
             boxes.append([y-s, x-s, y+s, x+s])
         # Apply non-max suppression wit 0.3 threshold to avoid
-        # objects covering each other
+        # shapes covering each other
         keep_ixs = utils.non_max_suppression(np.array(boxes), np.arange(N), 0.3)
-        objects = [s for i, s in enumerate(objects) if i in keep_ixs]
-        return bg_color, objects
+        shapes = [s for i, s in enumerate(shapes) if i in keep_ixs]
+        return bg_color, shapes
