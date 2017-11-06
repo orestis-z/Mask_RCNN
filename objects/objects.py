@@ -9,11 +9,16 @@ Licensed under the MIT License (see LICENSE for details)
 Written by Waleed Abdulla
 """
 
+import os, sys
 import math
 import random
 import numpy as np
 import cv2
 from random import randint
+
+parentPath = os.path.abspath("..")
+if parentPath not in sys.path:
+    sys.path.insert(0, parentPath)
 
 from config import Config
 import utils
