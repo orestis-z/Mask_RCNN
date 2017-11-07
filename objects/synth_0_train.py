@@ -4,13 +4,14 @@ import re
 import time
 import tensorflow as tf
 
+from synth_0_dataset import *
+
 parentPath = os.path.abspath("..")
 if parentPath not in sys.path:
     sys.path.insert(0, parentPath)
 
 import model as modellib
 from model import log
-from objects import *
 
 # Root directory of the project
 ROOT_DIR = parentPath
@@ -22,6 +23,7 @@ MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
 config = ObjectsConfig()
+config.display()
 
 # Training dataset
 dataset_train = ObjectsDataset()
