@@ -4,7 +4,7 @@ import re
 import time
 import tensorflow as tf
 
-from coco_dataset import *
+from ADE20K_dataset import *
 
 parentPath = os.path.abspath("..")
 if parentPath not in sys.path:
@@ -22,19 +22,19 @@ MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 # Path to COCO trained weights
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
-COCO_DIR = "/home/orestisz/repositories/coco"
+ADE20K_DIR = "/home/orestisz/data/ADE20K_2016_07_26"
 
 config = ObjectsConfig()
 config.display()
 
 # Training dataset
-dataset_train = ObjectsDataset()
-dataset_train.load_coco(COCO_DIR, "train")
-dataset_train.prepare()
+dataset_val = ObjectsDataset()
+dataset_val.load_ADE20K(ADE20K_DIR, "training")
+dataset_val.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load_coco(COCO_DIR, "val")
+dataset_val.load_ADE20K(ADE20K_DIR, "validation")
 dataset_val.prepare()
 
 # Create model in training mode
@@ -75,22 +75,22 @@ elif init_with == "last":
 # which layers to train by name pattern.
 
 # if 'heads' in sys.argv:
-# print('training heads...')
-# model.train(dataset_train, dataset_val, 
-#             learning_rate=config.LEARNING_RATE, 
-#             epochs=8, 
-#             layers='heads')
+print('training heads...')
+model.train(dataset_train, dataset_val, 
+            learning_rate=config.LEARNING_RATE, 
+            epochs=11, 
+            layers='heads')
 
 # Fine tune all layers
 # Passing layers="all" trains all layers. You can also 
 # pass a regular expression to select which layers to
 # train by name pattern.
 # if 'all' in sys.argv:
-print('fine tuning all layers...')
-model.train(dataset_train, dataset_val, 
-            learning_rate=config.LEARNING_RATE,
-            epochs=10, 
-            layers="all")
+# print('fine tuning all layers...')
+# model.train(dataset_train, dataset_val, 
+#             learning_rate=config.LEARNING_RATE,
+#             epochs=10, 
+#             layers="all")
 
 # Save weights
 # Typically not needed because callbacks save after every epoch

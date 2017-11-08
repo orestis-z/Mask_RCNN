@@ -1862,6 +1862,32 @@ class MaskRCNN():
         checkpoint = os.path.join(dir_name, checkpoints[-1])
         return dir_name, checkpoint
 
+    def find_all(self):
+        """Finds the last checkpoint file of the last trained model in the
+        model directory.
+        Returns:
+            log_dir: The directory where events and weights are saved
+            checkpoint_path: the path to the last checkpoint file
+        """
+        # Get directory names. Each directory corresponds to a model
+        dir_names = next(os.walk(self.model_dir))[1]
+        key = self.config.NAME.lower()
+        dir_names = filter(lambda f: f.startswith(key), dir_names)
+        dir_names = sorted(dir_names)
+
+        # Pick directories
+        dir_names = [os.path.join(self.model_dir, dir_name) for dir_name in dir_names]
+        dirs = []
+        # Find checkpoints
+        for dir_name in dir_names:
+            checkpoints = next(os.walk(dir_name))[2]
+            checkpoints = filter(lambda f: f.startswith("mask_rcnn"), checkpoints)
+            checkpoints = sorted(checkpoints)
+            checkpoints = [os.path.join(dir_name, checkpoint) for checkpoint in checkpoints]
+            if (dir_name and checkpoints):
+                dirs.append((dir_name, checkpoints))
+        return dirs
+
     def load_weights(self, filepath, by_name=False, exclude=None):
         """Modified version of the correspoding Keras function with
         the addition of multi-GPU support and the ability to exclude

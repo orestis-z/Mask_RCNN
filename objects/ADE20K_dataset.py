@@ -15,7 +15,9 @@ import random
 import numpy as np
 import cv2
 from random import randint
-from pycocotools.coco import COCO
+import scipy
+from scipy.io import loadmat
+from PIL import Image
 
 from object_config import Config
 
@@ -23,9 +25,10 @@ parentPath = os.path.abspath("..")
 if parentPath not in sys.path:
     sys.path.insert(0, parentPath)
 
-from coco import CocoDataset
+import utils
 
-ObjectsConfig = Config
+class ObjectsConfig(Config):
+    NAME = "objects"
     # """Configuration for training on the toy objects dataset.
     # Derives from the base Config class and overrides values specific
     # to the toy objects dataset.
@@ -60,13 +63,12 @@ ObjectsConfig = Config
     # VALIDATION_STEPS = 5
 
 
-class ObjectsDataset(CocoDataset):
+class ObjectsDataset(utils.Dataset):
     """Generates the objects synthetic dataset. The dataset consists of simple
     objects (triangles, squares, circles) placed randomly on a blank surface.
     The images are generated on the fly. No file access required.
     """
-    def load_coco(self, dataset_dir, subset, class_ids=None,
-                  class_map=None, return_coco=False):
+    def load_ADE20K(self, dataset_dir, subset):
         """Load a subset of the COCO dataset.
         dataset_dir: The root directory of the COCO dataset.
         subset: What to load (train, val, minival, val35k)
@@ -76,47 +78,42 @@ class ObjectsDataset(CocoDataset):
         return_coco: If True, returns the COCO object.
         """
         # Path
-        image_dir = os.path.join(dataset_dir, "train2014" if subset == "train"
-                                 else "val2014")
+        # image_dir = os.path.join(dataset_dir, "train2014" if subset == "train"
+        #                          else "val2014")
+        assert(subset == 'training' or subset == 'validation')
+
+        index = loadmat(os.path.join(dataset_dir, 'index_ade20k.mat'))['index']
 
         # Create COCO object
-        json_path_dict = {
-            "train": "annotations/instances_train2014.json",
-            "val": "annotations/instances_val2014.json",
-            "minival": "annotations/instances_minival2014.json",
-            "val35k": "annotations/instances_valminusminival2014.json",
-        }
-        coco = COCO(os.path.join(dataset_dir, json_path_dict[subset]))
+        # json_path_dict = {
+        #     "train": "annotations/instances_train2014.json",
+        #     "val": "annotations/instances_val2014.json",
+        #     "minival": "annotations/instances_minival2014.json",
+        #     "val35k": "annotations/instances_valminusminival2014.json",
+        # }
+        # coco = COCO(os.path.join(dataset_dir, json_path_dict[subset]))
 
-        # Load all classes or a subset?
-        if not class_ids:
-            # All classes
-            class_ids = sorted(coco.getCatIds())
-
-        # All images or a subset?
-        if class_ids:
-            image_ids = []
-            for id in class_ids:
-                image_ids.extend(list(coco.getImgIds(catIds=[id])))
-            # Remove duplicates
-            image_ids = list(set(image_ids))
-        else:
-            # All images
-            image_ids = list(coco.imgs.keys())
+        # All images
+        image_ids = range(len(index['folder'][0][0][0]))
 
         # Add classes
         self.add_class("objects", 1, "object")
 
         # Add images
+        folders = index['folder'][0][0][0]
         for i in image_ids:
-            self.add_image(
-                "objects", image_id=i,
-                path=os.path.join(image_dir, coco.imgs[i]['file_name']),
-                width=coco.imgs[i]["width"],
-                height=coco.imgs[i]["height"],
-                annotations=coco.loadAnns(coco.getAnnIds(imgIds=[i], iscrowd=False)))
-        if return_coco:
-            return coco
+            folder = '/'.join(folders[i][0].split('/')[1:])
+            if subset in folder.split('/'):
+                file_name = index['filename'][0][0][0][i][0]
+                path = os.path.join(dataset_dir, folder, file_name)
+                im = Image.open(path)
+                width, height = im.size
+                self.add_image(
+                    "objects", image_id=i,
+                    path=path,
+                    width=width,
+                    height=height)
+                    # annotations=)
 
     def load_mask(self, image_id):
         """Load instance masks for the given image.
@@ -131,36 +128,29 @@ class ObjectsDataset(CocoDataset):
         class_ids: a 1D array of class IDs of the instance masks.
         """
         image_info = self.image_info[image_id]
+        seg_path = image_info['path'][:-4] + '_seg.png'
+        seg = scipy.misc.imread(seg_path)
+        # R = seg[:, :, 0]
+        # G = seg[:, :, 1]
+        B = seg[:, :, 2]
+
+        # object_class_masks = (R.astype(np.uint16) / 10) * 256 + G.astype(np.uint16)
+        unique, unique_inverse = np.unique(B.flatten(), return_inverse=True)
+        object_instance_masks = np.reshape(unique_inverse, B.shape)
+        instances = np.unique(unique_inverse).tolist()
+        instances.remove(0)
+        instance_count = len(instances)
         instance_masks = []
-        class_ids = []
-        annotations = self.image_info[image_id]["annotations"]
-        # Build mask of shape [height, width, instance_count] and list
-        # of class IDs that correspond to each channel of the mask.
-        for annotation in annotations:
-            class_id = self.map_source_class_id("objects.1")
-            if class_id:
-                m = self.annToMask(annotation, image_info["height"],
-                                   image_info["width"])
-                # Some objects are so small that they're less than 1 pixel area
-                # and end up rounded out. Skip those objects.
-                if m.max() < 1:
-                    continue
-                instance_masks.append(m)
-                class_ids.append(self.class_names.index("object"))
+        for i, instance in enumerate(instances):
+            vfunc = np.vectorize(lambda a: 1 if a == instance else 0)
+            instance_masks.append(vfunc(object_instance_masks))
 
-        # Pack instance masks into an array
-        if class_ids:
-            mask = np.stack(instance_masks, axis=2)
-            class_ids = np.array(class_ids, dtype=np.int32)
-            return mask, class_ids
-        else:
-            # Call super class to return an empty mask
-            return super(self.__class__).load_mask(image_id)
+        masks = np.stack(instance_masks, axis=2)
+        class_ids = np.array([1] * instance_count, dtype=np.int32)
 
-    def image_reference(self, image_id):
-        """Return a link to the image in the COCO Website."""
-        info = self.image_info[image_id]
-        if info["source"] == "objects":
-            return "http://cocodataset.org/#explore?id={}".format(info["id"])
-        else:
-            super(self.__class__).image_reference(self, image_id)
+        return masks, class_ids
+
+if __name__ == '__main__':
+    dataset = ObjectsDataset()
+    dataset.load_AD20K('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
+    masks, class_ids = dataset.load_mask(0)
