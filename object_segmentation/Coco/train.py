@@ -1,20 +1,15 @@
-import os
-import sys
-import re
-import time
+import os, sys
 import tensorflow as tf
 
-from synth_0_dataset import *
+from dataset import *
 
-parentPath = os.path.abspath("..")
-if parentPath not in sys.path:
-    sys.path.insert(0, parentPath)
+# Root directory of the project
+ROOT_DIR = os.path.abspath("../..")
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 
 import model as modellib
 from model import log
-
-# Root directory of the project
-ROOT_DIR = parentPath
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
@@ -22,17 +17,19 @@ MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 # Path to COCO trained weights
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
+COCO_DIR = "/home/orestisz/repositories/coco"
+
 config = ObjectsConfig()
 config.display()
 
 # Training dataset
 dataset_train = ObjectsDataset()
-dataset_train.load_objects(500, config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
+dataset_train.load_coco(COCO_DIR, "train")
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load_objects(50, config.IMAGE_SHAPE[0], config.IMAGE_SHAPE[1])
+dataset_val.load_coco(COCO_DIR, "val")
 dataset_val.prepare()
 
 # Create model in training mode
@@ -59,7 +56,6 @@ elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
 
-
 # ## Training
 # 
 # Train in two stages:
@@ -71,11 +67,12 @@ elif init_with == "last":
 # Passing layers="heads" freezes all layers except the head
 # layers. You can also pass a regular expression to select
 # which layers to train by name pattern.
-print('training heads...')
-model.train(dataset_train, dataset_val, 
-            learning_rate=config.LEARNING_RATE, 
-            epochs=1, 
-            layers='heads')
+
+# print('training heads...')
+# model.train(dataset_train, dataset_val, 
+#             learning_rate=config.LEARNING_RATE, 
+#             epochs=8, 
+#             layers='heads')
 
 # Fine tune all layers
 # Passing layers="all" trains all layers. You can also 
@@ -83,12 +80,6 @@ model.train(dataset_train, dataset_val,
 # train by name pattern.
 print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
-            learning_rate=config.LEARNING_RATE / 10,
-            epochs=2, 
+            learning_rate=config.LEARNING_RATE,
+            epochs=10, 
             layers="all")
-
-# Save weights
-# Typically not needed because callbacks save after every epoch
-print('saving weights...')
-model_path = os.path.join(MODEL_DIR, "mask_rcnn_objects.h5")
-model.keras_model.save_weights(model_path)
