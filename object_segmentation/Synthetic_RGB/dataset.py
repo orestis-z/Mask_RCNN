@@ -45,9 +45,14 @@ class ObjectsDataset(utils.Dataset):
         # actual images. Images are generated on the fly in load_image().
         for i in range(count):
             bg_color, shapes = self.random_image(height, width)
-            self.add_image("objects", image_id=i, path=None,
-                           width=width, height=height,
-                           bg_color=bg_color, shapes=shapes)
+            self.add_image(
+                "objects",
+                image_id=i,
+                path=None,
+                width=width,
+                height=height,
+                bg_color=bg_color,
+                shapes=shapes)
 
     def load_image(self, image_id):
         """Generate an image from the specs of the given image ID.

@@ -17,19 +17,19 @@ MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 # Path to COCO trained weights
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
-ADE20K_DIR = "/home/orestisz/data/ADE20K_2016_07_26"
+SCENENN_DIR = "/home/orestisz/data/sceneNN"
 
 config = ObjectsConfig()
 config.display()
 
 # Training dataset
 dataset_train = ObjectsDataset()
-dataset_train.load_ADE20K(ADE20K_DIR, "training")
+dataset_train.load_sceneNN(SCENENN_DIR, "training")
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load_ADE20K(ADE20K_DIR, "validation")
+dataset_val.load_sceneNN(SCENENN_DIR, "validation")
 dataset_val.prepare()
 
 # Create model in training mode

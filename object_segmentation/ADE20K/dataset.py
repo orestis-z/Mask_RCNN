@@ -37,7 +37,8 @@ class ObjectsDataset(utils.Dataset):
                 im = Image.open(path)
                 width, height = im.size
                 self.add_image(
-                    "seg_ADE20K", image_id=i,
+                    "seg_ADE20K",
+                    image_id=i,
                     path=path,
                     width=width,
                     height=height)
