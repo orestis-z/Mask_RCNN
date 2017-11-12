@@ -1,7 +1,7 @@
 import os, sys
 import numpy as np
 import scipy
-from scipy.io import loadmat
+import skimage.io
 from PIL import Image
 
 # Root directory of the project
@@ -15,6 +15,15 @@ import utils
 
 class ObjectsConfig(Config):
     NAME = "seg_sceneNN"
+
+    MODE = 'RGBD'
+
+    # Image mean (RGBD)
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 100.0])
+
+    STEPS_PER_EPOCH = 200
+
+    VALIDATION_STEPS = 10
 
 class ObjectsDataset(utils.Dataset):
     def load_sceneNN(self, dataset_dir, subset):
@@ -46,6 +55,16 @@ class ObjectsDataset(utils.Dataset):
                                 height=height)
                                 # annotations=)
 
+    def load_image(self, image_id):
+        """Load the specified image and return a [H,W,3+1] Numpy array.
+        """
+        # Load image & depth
+        image = super(ObjectsDataset, self).load_image(image_id)
+        depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
+        rgbd = np.dstack((image, depth))
+    
+        return rgbd
+
     def load_mask(self, image_id):
         """Load instance masks for the given image.
 
@@ -56,11 +75,14 @@ class ObjectsDataset(utils.Dataset):
         """
         image_info = self.image_info[image_id]
         img = scipy.misc.imread(image_info['mask_path'], mode='RGBA')
+
         R = img[:, :, 0]
         G = img[:, :, 1]
         B = img[:, :, 2]
         A = img[:, :, 3]
 
+        # port to python from cpp script:
+        # https://github.com/scenenn/shrec17/blob/master/mask_from_label/mask_from_label.cpp
         seg = np.bitwise_or(np.bitwise_or(np.bitwise_or(
                 np.left_shift(R, 24),
                 np.left_shift(G, 16)),

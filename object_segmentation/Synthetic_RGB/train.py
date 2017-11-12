@@ -62,9 +62,6 @@ elif init_with == "last":
 # 2. Fine-tune all layers. For this simple example it's not necessary, but we're including it to show the process. Simply pass `layers="all` to train all layers.
 
 # Train the head branches
-# Passing layers="heads" freezes all layers except the head
-# layers. You can also pass a regular expression to select
-# which layers to train by name pattern.
 print('training heads...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE, 
@@ -72,9 +69,6 @@ model.train(dataset_train, dataset_val,
             layers='heads')
 
 # Fine tune all layers
-# Passing layers="all" trains all layers. You can also 
-# pass a regular expression to select which layers to
-# train by name pattern.
 print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE / 10,

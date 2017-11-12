@@ -66,9 +66,6 @@ start = 13
 for i in range(100):
     j = i + start
     # Train the head branches
-    # Passing layers="heads" freezes all layers except the head
-    # layers. You can also pass a regular expression to select
-    # which layers to train by name pattern.
     print('training heads...')
     model.train(dataset_train, dataset_val, 
                 learning_rate=config.LEARNING_RATE, 
@@ -76,9 +73,6 @@ for i in range(100):
                 layers='heads')
 
     # Fine tune all layers
-    # Passing layers="all" trains all layers. You can also 
-    # pass a regular expression to select which layers to
-    # train by name pattern.
     # print('fine tuning all layers...')
     # model.train(dataset_train, dataset_val, 
     #             learning_rate=config.LEARNING_RATE / 10,

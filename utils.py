@@ -391,8 +391,9 @@ def resize_image(image, min_dim=None, max_dim=None, padding=False):
             scale = max_dim / image_max
     # Resize image and mask
     if scale != 1:
-        image = scipy.misc.imresize(
-            image, (round(h * scale), round(w * scale)))
+        # image = scipy.misc.imresize(
+            # image, (round(h * scale), round(w * scale)))
+        image = scipy.ndimage.zoom(image, [scale, scale, 1])
     # Need padding?
     if padding:
         # Get new height and width

@@ -55,10 +55,13 @@ class ObjectsDataset(utils.Dataset):
         image_info = self.image_info[image_id]
         seg_path = image_info['path'][:-4] + '_seg.png'
         seg = scipy.misc.imread(seg_path)
+
         # R = seg[:, :, 0]
         # G = seg[:, :, 1]
         B = seg[:, :, 2]
 
+        # port to python from matlab script:
+        # http://groups.csail.mit.edu/vision/datasets/ADE20K/code/loadAde20K.m
         # object_class_masks = (R.astype(np.uint16) / 10) * 256 + G.astype(np.uint16)
         unique, unique_inverse = np.unique(B.flatten(), return_inverse=True)
         object_instance_masks = np.reshape(unique_inverse, B.shape)

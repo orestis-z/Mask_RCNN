@@ -27,6 +27,7 @@ import keras.layers as KL
 import keras.initializers as KI
 import keras.engine as KE
 import keras.models as KM
+import skimage.io
 
 import utils
 

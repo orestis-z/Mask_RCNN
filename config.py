@@ -25,6 +25,8 @@ class Config(object):
     # experiment is running.
     NAME = None  # Override in sub-classes
 
+    MODE = 'RGB'
+
     # NUMBER OF GPUs to use. For CPU training, use 1
     GPU_COUNT = 1
 
@@ -142,7 +144,7 @@ class Config(object):
 
         # Input image size
         self.IMAGE_SHAPE = np.array(
-            [self.IMAGE_MAX_DIM, self.IMAGE_MAX_DIM, 3])
+            [self.IMAGE_MAX_DIM, self.IMAGE_MAX_DIM, 4 if self.MODE == 'RGBD' else 3])
 
         # Compute backbone size from input image size
         self.BACKBONE_SHAPES = np.array(
