@@ -62,19 +62,17 @@ elif init_with == "last":
 # 1. Only the heads. Here we're freezing all the backbone layers and training only the randomly initialized layers (i.e. the ones that we didn't use pre-trained weights from MS COCO). To train only the head layers, pass `layers='heads'` to the `train()` function.
 # 
 # 2. Fine-tune all layers. For this simple example it's not necessary, but we're including it to show the process. Simply pass `layers="all` to train all layers.
-start = 13
-for i in range(100):
-    j = i + start
-    # Train the head branches
-    print('training heads...')
-    model.train(dataset_train, dataset_val, 
-                learning_rate=config.LEARNING_RATE, 
-                epochs=j, 
-                layers='heads')
 
-    # Fine tune all layers
-    # print('fine tuning all layers...')
-    # model.train(dataset_train, dataset_val, 
-    #             learning_rate=config.LEARNING_RATE / 10,
-    #             epochs=j + 1, 
-    #             layers="all")
+# Train the head branches
+print('training heads...')
+model.train(dataset_train, dataset_val, 
+            learning_rate=config.LEARNING_RATE, 
+            epochs=100, 
+            layers='heads')
+
+# Fine tune all layers
+# print('fine tuning all layers...')
+# model.train(dataset_train, dataset_val, 
+#             learning_rate=config.LEARNING_RATE / 10,
+#             epochs=j + 1, 
+#             layers="all")

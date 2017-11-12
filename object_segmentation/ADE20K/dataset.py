@@ -42,7 +42,6 @@ class ObjectsDataset(utils.Dataset):
                     path=path,
                     width=width,
                     height=height)
-                    # annotations=)
 
     def load_mask(self, image_id):
         """Load instance masks for the given image.

@@ -21,13 +21,10 @@ class ObjectsConfig(Config):
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 100.0])
 
-    STEPS_PER_EPOCH = 200
-
-    VALIDATION_STEPS = 10
-
 class ObjectsDataset(utils.Dataset):
     def load_sceneNN(self, dataset_dir, subset):
-        assert(subset == 'training' or subset == 'validation')
+        assert(subset == 'training' or subset == 'validation' or subset == 'testing')
+        dataset_dir = os.path.join(dataset_dir, subset)
 
         # Add classes
         self.add_class("seg_sceneNN", 1, "object")
@@ -53,7 +50,6 @@ class ObjectsDataset(utils.Dataset):
                                 mask_path=mask_path,
                                 width=width,
                                 height=height)
-                                # annotations=)
 
     def load_image(self, image_id):
         """Load the specified image and return a [H,W,3+1] Numpy array.
@@ -62,7 +58,7 @@ class ObjectsDataset(utils.Dataset):
         image = super(ObjectsDataset, self).load_image(image_id)
         depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
         rgbd = np.dstack((image, depth))
-    
+
         return rgbd
 
     def load_mask(self, image_id):
