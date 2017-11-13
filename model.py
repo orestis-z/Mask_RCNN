@@ -450,11 +450,12 @@ def detection_targets_graph(proposals, gt_boxes, gt_masks, config):
     with tf.control_dependencies(asserts):
         proposals = tf.identity(proposals)
 
-    # Remove proposals zero padding
-    non_zeros = tf.cast(tf.reduce_sum(tf.abs(proposals), axis=1), tf.bool)
-    proposals = tf.boolean_mask(proposals, non_zeros)
+    # Remove zero padding
+    proposals, _ = trim_zeros_graph(proposals, name="trim_proposals")
+    gt_boxes, non_zeros = trim_zeros_graph(gt_boxes, name="trim_gt_boxes")
+    gt_masks = tf.gather(gt_masks, tf.where(non_zeros)[:, 0], axis=2,
+                         name="trim_gt_masks")
 
-    # TODO: Remove zero padding from gt_boxes and gt_masks
 
     # Compute overlaps matrix [rpn_rois, gt_boxes]
     # 1. Tile GT boxes and repeate ROIs tensor. This
@@ -1957,10 +1958,10 @@ class MaskRCNN():
             self.keras_model.add_loss(tf.reduce_mean(layer.output, keep_dims=True))
 
         # Add L2 Regularization
-        reg_losses = [keras.regularizers.l2(self.config.WEIGHT_DECAY)(w)
-                    for w in self.keras_model.trainable_weights]
+        reg_losses = [keras.regularizers.l2(self.config.WEIGHT_DECAY)(w) / tf.cast(tf.size(w), tf.float32)
+                      for w in self.keras_model.trainable_weights]
         self.keras_model.add_loss(tf.add_n(reg_losses))
-            
+
         # Compile
         self.keras_model.compile(optimizer=optimizer, loss=[None]*len(self.keras_model.outputs))
 
@@ -2419,16 +2420,16 @@ def unmold_image(normalized_images, config):
 #  Miscellenous Graph Functions
 ############################################################
 
-def trim_zeros_graph(boxes):
+def trim_zeros_graph(boxes, name=None):
     """Often boxes are represented with matricies of shape [N, 4] and
     are padded with zeros. This removes zero boxes.
 
     boxes: [N, 4] matrix of boxes.
-
-    TODO: use this function to reduce code duplication
+    non_zeros: [N] a 1D boolean mask identifying the rows to keep
     """
-    area = tf.boolean_mask(boxes, tf.cast(tf.reduce_sum(tf.abs(boxes), axis=1),
-                           tf.bool))
+    non_zeros = tf.cast(tf.reduce_sum(tf.abs(boxes), axis=1), tf.bool)
+    boxes = tf.boolean_mask(boxes, non_zeros, name=name)
+    return boxes, non_zeros
 
 
 def batch_pack_graph(x, counts, num_rows):
