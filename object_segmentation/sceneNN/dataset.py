@@ -1,4 +1,5 @@
 import os, sys
+import math
 import numpy as np
 import scipy
 import skimage.io
@@ -18,8 +19,19 @@ class ObjectsConfig(Config):
 
     MODE = 'RGBD'
 
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 640
+
+    STEPS_PER_EPOCH = 1000
+
+    VALIDATION_STEPS = 50
+
     # Image mean (RGBD)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 100.0])
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
+
+    # def __init__(self):
+    #     super(Config, self).__init__()
+    #     self.BATCH_SIZE = 2
 
 class ObjectsDataset(utils.Dataset):
     def load_sceneNN(self, dataset_dir, subset):
@@ -28,6 +40,7 @@ class ObjectsDataset(utils.Dataset):
 
         # Add classes
         self.add_class("seg_sceneNN", 1, "object")
+        count = 0
         # Add images
         for i, (root, dirs, files) in enumerate(os.walk(dataset_dir)):
             root_split = root.split('/')
@@ -50,6 +63,11 @@ class ObjectsDataset(utils.Dataset):
                                 mask_path=mask_path,
                                 width=width,
                                 height=height)
+                            count += 1
+                    else:
+                        if (subset == 'training'):
+                            print('Warning: No depth or mask found for ' + path)
+        print('added {} images for {}'.format(count, subset))
 
     def load_image(self, image_id):
         """Load the specified image and return a [H,W,3+1] Numpy array.

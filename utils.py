@@ -394,6 +394,9 @@ def resize_image(image, min_dim=None, max_dim=None, padding=False):
         # image = scipy.misc.imresize(
             # image, (round(h * scale), round(w * scale)))
         image = scipy.ndimage.zoom(image, [scale, scale, 1])
+        depth = image[:, :, 3]
+        image = np.clip(image[:, :, 0:3], 0, 255)
+        image = np.dstack((image, depth))
     # Need padding?
     if padding:
         # Get new height and width

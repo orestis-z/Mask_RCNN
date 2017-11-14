@@ -34,9 +34,7 @@ dataset_val.prepare()
 
 # Create model in training mode
 print('creating model..')
-DEVICE = "/gpu:0"  # /cpu:0 or /gpu:0
-with tf.device(DEVICE):
-    model = modellib.MaskRCNN(mode="training", config=config,
+model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
 # # Which weights to start with?
@@ -72,6 +70,6 @@ model.load_weights(model.find_last()[1], by_name=True)
 # Fine tune all layers
 print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
-            learning_rate=config.LEARNING_RATE / 10,
+            learning_rate=config.LEARNING_RATE / 100,
             epochs=100, 
             layers="all")

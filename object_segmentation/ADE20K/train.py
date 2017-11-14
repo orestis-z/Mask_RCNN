@@ -73,6 +73,6 @@ model.train(dataset_train, dataset_val,
 # Fine tune all layers
 # print('fine tuning all layers...')
 # model.train(dataset_train, dataset_val, 
-#             learning_rate=config.LEARNING_RATE / 10,
+#             learning_rate=config.LEARNING_RATE,
 #             epochs=j + 1, 
 #             layers="all")
