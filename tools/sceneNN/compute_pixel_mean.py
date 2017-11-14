@@ -24,7 +24,7 @@ def compute_RGB_mean(path):
         B_mean[i] = B * n
         count += n
     
-    return np.sum([np.mean(R_mean), np.mean(G_mean), np.mean(B_mean)]) / count
+    return np.array([np.sum(R_mean), np.sum(G_mean), np.sum(B_mean)]) / count
 
 def compute_depth_mean(path):
     file_list = os.listdir(path)
