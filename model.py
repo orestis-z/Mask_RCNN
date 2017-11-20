@@ -1136,7 +1136,7 @@ def load_image_gt(dataset, config, image_id, augment=False,
         defined in MINI_MASK_SHAPE.
     """
     # Load image and mask
-    image = dataset.load_image(image_id)
+    image = dataset.load_image(image_id, depth=config.MODE=='RGBD')
     mask, class_ids = dataset.load_mask(image_id)
     shape = image.shape
     image, window, scale, padding = utils.resize_image(
@@ -1637,8 +1637,9 @@ def data_generator(dataset, config, shuffle=True, augment=True, random_rois=0,
             # Log it and skip the image
             logging.exception("Error processing image {}".format(dataset.image_info[image_id]))
             error_count += 1
-            if error_count > 5:
-                raise
+            print('error_count: {}'.format(error_count))
+            # if error_count > 5:
+            #     raise
 
 
 

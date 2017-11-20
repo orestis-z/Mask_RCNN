@@ -1,8 +1,8 @@
 import os, sys
 import math
 import numpy as np
-import scipy
 import skimage.io
+import cv2
 from PIL import Image
 
 # Root directory of the project
@@ -16,22 +16,18 @@ import utils
 
 class ObjectsConfig(Config):
     NAME = "seg_sceneNN"
+    # NAME = "seg_ADE20K"
 
     MODE = 'RGBD'
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 640
 
-    STEPS_PER_EPOCH = 1000
-
-    VALIDATION_STEPS = 50
+    # IMAGES_PER_GPU = 2
+    # LEARNING_RATE = 0.02
 
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
-
-    # def __init__(self):
-    #     super(Config, self).__init__()
-    #     self.BATCH_SIZE = 2
 
 class ObjectsDataset(utils.Dataset):
     def load_sceneNN(self, dataset_dir, subset):
@@ -50,8 +46,8 @@ class ObjectsDataset(utils.Dataset):
                     depth_path = os.path.join(parentRoot, 'depth', 'depth' + file[5:])
                     mask_path = os.path.join(parentRoot, 'mask', 'mask_' + file)
                     # only add if corresponding mask exists
+                    path = os.path.join(root, file)
                     if os.path.isfile(depth_path) and os.path.isfile(mask_path):
-                        path = os.path.join(root, file)
                         if (os.stat(path).st_size):
                             im = Image.open(path)
                             width, height = im.size
@@ -65,19 +61,20 @@ class ObjectsDataset(utils.Dataset):
                                 height=height)
                             count += 1
                     else:
-                        if (subset == 'training'):
-                            print('Warning: No depth or mask found for ' + path)
+                        print('Warning: No depth or mask found for ' + path)
         print('added {} images for {}'.format(count, subset))
 
-    def load_image(self, image_id):
+    def load_image(self, image_id, depth=True):
         """Load the specified image and return a [H,W,3+1] Numpy array.
         """
         # Load image & depth
         image = super(ObjectsDataset, self).load_image(image_id)
-        depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
-        rgbd = np.dstack((image, depth))
-
-        return rgbd
+        if depth:
+            depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
+            rgbd = np.dstack((image, depth))
+            return rgbd
+        else:
+            return image
 
     def load_mask(self, image_id):
         """Load instance masks for the given image.
@@ -87,8 +84,8 @@ class ObjectsDataset(utils.Dataset):
             one mask per instance.
         class_ids: a 1D array of class IDs of the instance masks.
         """
-        image_info = self.image_info[image_id]
-        img = scipy.misc.imread(image_info['mask_path'], mode='RGBA')
+        mask_path = self.image_info[image_id]['mask_path']
+        img = cv2.imread(mask_path, -1)
 
         R = img[:, :, 0]
         G = img[:, :, 1]
@@ -112,7 +109,8 @@ class ObjectsDataset(utils.Dataset):
         for i, instance in enumerate(instances):
             vfunc = np.vectorize(lambda a: 1 if a == instance else 0)
             instance_masks.append(vfunc(object_instance_masks))
-
+        if not instance_masks:
+            raise ValueError("No instances for image {}".format(mask_path))
         masks = np.stack(instance_masks, axis=2)
         class_ids = np.array([1] * len(instances), dtype=np.int32)
 
