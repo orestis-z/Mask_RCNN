@@ -16,8 +16,9 @@ if parentPath not in sys.path:
     sys.path.insert(0, parentPath)
 
 import model as modellib
-from visualize import *
+from visualize import Polygon
 from instance_segmentation.object_config import Config
+from misc import draw_masks
 
 # Root directory of the project
 ROOT_DIR = parentPath
@@ -49,56 +50,27 @@ shared = Shared()
 def main(shared):
     shared.running = True
     rgbd = np.dstack((shared.image, shared.depth))
-    start = time.clock()
     with graph.as_default():
         try:
+            start = time.clock()
             shared.masks = model.detect([rgbd])[0]['masks']
+            print(time.clock() - start)
             shared.i_pred += 1
         except:
             print('error in detection')
-    print(time.clock() - start)
     shared.running = False
-
-def display_masks(image, masks, ax):
-    # Number of instances
-    N = masks.shape[-1]
-
-    # Generate random colors
-    colors = random_colors(N)
-
-    # Show area outside image boundaries.
-    height, width = image.shape[:2]
-    # plt.set_ylim(height + 10, -10)
-    # plt.set_xlim(-10, width + 10)
-    plt.axis('off')
-
-    masked_image = image.astype(np.uint32).copy()
-    for i in range(N):
-        color = colors[i]
-
-        # Mask
-        mask = masks[:, :, i]
-        masked_image = apply_mask(masked_image, mask, color)
-        # Mask Polygon
-        # Pad to ensure proper polygons for masks that touch image edges.
-        padded_mask = np.zeros(
-            (mask.shape[0] + 2, mask.shape[1] + 2), dtype=np.uint8)
-        padded_mask[1:-1, 1:-1] = mask
-        contours = find_contours(padded_mask, 0.5)
-        for verts in contours:
-            # Subtract the padding and flip (y, x) to (x, y)
-            verts = np.fliplr(verts) - 1
-            p = Polygon(verts, facecolor="none", edgecolor=color)
-            ax.add_patch(p)
-    plt.imshow(masked_image.astype(np.uint8))
 
 def plot_loop(shared):
     ax = plt.subplots(1)[1]
     while True:
         if shared.i_pred > shared.i_plot:
             plt.cla()
-            # plt.axis("off")
-            display_masks(shared.image, shared.masks, ax)
+            plt.axis("off")
+            img, vertices = draw_masks(shared.image, shared.masks)
+            for verts, color in vertices:
+                p = Polygon(verts, facecolor="none", edgecolor=color)
+                ax.add_patch(p)
+            plt.imshow(img)
             if shared.i_plot == 0:
                 plt.show(block=False)
             else:
