@@ -16,7 +16,7 @@ from model import log
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
 # Path to COCO trained weights
-SCENENN_MODEL_PATH = os.path.join(ROOT_DIR, "logs/seg_scenenn20171114T0203/mask_rcnn_seg_scenenn_0190.h5")
+SCENENN_MODEL_PATH = os.path.join(ROOT_DIR, "logs/mask_rcnn_seg_scenenn_0101.h5")
 
 SCENENET_DIR = "/external_datasets/SceneNet_RGBD"
 
@@ -24,13 +24,13 @@ config = ObjectsConfig()
 config.display()
 
 # Training dataset
-# dataset_train = ObjectsDataset()
-# dataset_train.load_sceneNN(SCENENET_DIR, "training")
-# dataset_train.prepare()
+dataset_train = ObjectsDataset()
+dataset_train.load_sceneNet(SCENENET_DIR, "training")
+dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load_sceneNN(SCENENET_DIR, "validation")
+dataset_val.load_sceneNet(SCENENET_DIR, "validation")
 dataset_val.prepare()
 
 # Create model in training mode
@@ -41,12 +41,13 @@ model = modellib.MaskRCNN(mode="training", config=config,
 exclude = []
 
 # # Which weights to start with?
-init_with = "scenenn"  # scenenn or last
+init_with = "last"  # scenenn or last
 
 print('loading weights...')
 if init_with == "scenenn":
     model.load_weights(SCENENN_MODEL_PATH, by_name=True,
-                   exclude=exclude)
+                       exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
+                                "mrcnn_bbox", "mrcnn_mask"])
 elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
@@ -69,4 +70,4 @@ print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE,
             epochs=1000,
-            layers='|'.join(exclude))
+            layers='all')

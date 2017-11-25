@@ -9,12 +9,12 @@ ROOT_DIR = os.path.abspath("../..")
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from object_segmentation.object_config import Config
+from instance_segmentation.object_config import Config
 
 import utils
 
 class ObjectsConfig(Config):
-    NAME = "seg_SceneNet"
+    NAME = "seg_sceneNet"
     # NAME = "seg_ADE20K"
 
     MODE = 'RGBD'
@@ -22,49 +22,68 @@ class ObjectsConfig(Config):
     IMAGE_MIN_DIM = 256
     IMAGE_MAX_DIM = 320
 
-    IMAGES_PER_GPU = 2
-    # LEARNING_RATE = 0.002
-    # LEARNING_RATE = 0.02
+    # IMAGES_PER_GPU = 2
+    LEARNING_RATE = 0.002 / 10
     
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
 
 class ObjectsDataset(utils.Dataset):
-    def load_sceneNet(self, dataset_dir, subset):
+    CLASSES = [ (0,'Unknown'),
+                (1,'Bed'),
+                (2,'Books'),
+                (3,'Ceiling'),
+                (4,'Chair'),
+                (5,'Floor'),
+                (6,'Furniture'),
+                (7,'Objects'),
+                (8,'Picture'),
+                (9,'Sofa'),
+                (10,'Table'),
+                (11,'TV'),
+                (12,'Wall'),
+                (13,'Window')]
+
+    # def __init__(self, class_map=None):
+    #     super().__init__()
+    #     self.class_info = []
+
+    def load_sceneNet(self, dataset_dir, subset, skip=19):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
-        dataset_dir = os.path.join(dataset_dir, subset, '0')
+        dataset_dir = os.path.join(dataset_dir, subset)
 
         # Add classes
-        self.add_class("seg_sceneNN", 1, "object")
+        # for cls in self.CLASSES:
+        #     self.add_class("seg_sceneNet", cls[0], cls[1])
+        # for i in range(1000):
+        #     self.add_class("seg_sceneNet", i, str(i))
+
+        self.add_class("seg_sceneNet", 1, 'object')
+
         count = 0
         # Add images
         for i, (root, dirs, files) in enumerate(os.walk(dataset_dir)):
             root_split = root.split('/')
-            if count > 0:
-                break
             if root_split[-1] == 'photo': # and subset in root_split:
-                print('Loading {} data from {}'.format(subset, root_split[-2]))
-                for file in files:
-                    parentRoot = '/'.join(root.split('/')[:-1])
-                    depth_path = os.path.join(parentRoot, 'depth', file[:-4] + '.png')
-                    instance_path = os.path.join(parentRoot, 'instance', file[:-4] + '.png')
-                    # only add if corresponding mask exists
-                    path = os.path.join(root, file)
-                    if os.path.isfile(depth_path) and os.path.isfile(instance_path):
-                        if (os.stat(path).st_size):
-                            im = Image.open(path)
-                            width, height = im.size
-                            self.add_image(
-                                "seg_sceneNN",
-                                image_id=i,
-                                path=path,
-                                depth_path=depth_path,
-                                instance_path=instance_path,
-                                width=width,
-                                height=height)
-                            count += 1
-                    else:
-                        print('Warning: No depth or mask found for ' + path)
+                print('Loading {} data from {}, {}'.format(subset, root_split[-3], root_split[-2]))
+                for j, file in enumerate(files):
+                    if j % (skip + 1) == 0:
+                        parentRoot = '/'.join(root.split('/')[:-1])
+                        depth_path = os.path.join(parentRoot, 'depth', file[:-4] + '.png')
+                        instance_path = os.path.join(parentRoot, 'instance', file[:-4] + '.png')
+                        path = os.path.join(root, file)
+#                         im = Image.open(path)
+#                         width, height = im.size
+                        width, height = (320, 240)
+                        self.add_image(
+                            "seg_sceneNet",
+                            image_id=i,
+                            path=path,
+                            depth_path=depth_path,
+                            instance_path=instance_path,
+                            width=width,
+                            height=height)
+                        count += 1
         print('added {} images for {}'.format(count, subset))
 
     def load_image(self, image_id, depth=True):
@@ -90,22 +109,22 @@ class ObjectsDataset(utils.Dataset):
         instance_path = self.image_info[image_id]['instance_path']
         img = np.asarray(Image.open(instance_path))
 
-        unique, unique_inverse = np.unique(img.flatten(), return_inverse=True)
-        object_instance_masks = np.reshape(unique_inverse, img.shape)
-        instances = np.unique(unique_inverse).tolist()
-        instances.remove(0)
+        instances, unique_inverse = np.unique(img.flatten(), return_inverse=True)
+        object_instance_mask_idx = np.reshape(unique_inverse, img.shape)
+        instance_idx = np.unique(unique_inverse)
         instance_masks = []
-        for i, instance in enumerate(instances):
-            vfunc = np.vectorize(lambda a: 1 if a == instance else 0)
-            instance_masks.append(vfunc(object_instance_masks))
+        for i, instance_i in enumerate(instance_idx):
+            vfunc = np.vectorize(lambda a: 1 if a == instance_i else 0)
+            instance_masks.append(vfunc(object_instance_mask_idx))
         if not instance_masks:
             raise ValueError("No instances for image {}".format(instance_path))
         masks = np.stack(instance_masks, axis=2)
+        # class_ids = np.array(instances, dtype=np.int32)
         class_ids = np.array([1] * len(instances), dtype=np.int32)
 
         return masks, class_ids
 
 if __name__ == '__main__':
     dataset = ObjectsDataset()
-    dataset.load_sceneNet('/external_datasets/SceneNet_RGBD', 'validation')
+    dataset.load_sceneNet('/external_datasets/SceneNet_RGBD', 'validation', skip=299)
     masks, class_ids = dataset.load_mask(0)

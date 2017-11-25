@@ -24,7 +24,7 @@ import tensorflow as tf
 
 # Limit the resource usage for tensorflow backend
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.68
+config.gpu_options.per_process_gpu_memory_fraction = 0.45
 config.gpu_options.visible_device_list = "0"
 tf_session = tf.Session(config=config)
 from keras.backend.tensorflow_backend import set_session
@@ -2130,7 +2130,7 @@ class MaskRCNN():
         fit_kwargs = {
             "steps_per_epoch": self.config.STEPS_PER_EPOCH,
             "callbacks": callbacks,
-            "validation_data": next(val_generator),
+            "validation_data": val_generator,
             "validation_steps": self.config.VALIDATION_STEPS,
             "max_queue_size": 100,
             "workers": max(self.config.BATCH_SIZE // 2, 2),
