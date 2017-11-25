@@ -10,7 +10,7 @@ ROOT_DIR = os.path.abspath("../..")
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from object_segmentation.object_config import Config
+from instance_segmentation.object_config import Config
 
 import utils
 
@@ -30,7 +30,7 @@ class ObjectsConfig(Config):
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
 
 class ObjectsDataset(utils.Dataset):
-    def load_sceneNN(self, dataset_dir, subset):
+    def load_sceneNN(self, dataset_dir, subset, skip=9):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
 
@@ -41,27 +41,27 @@ class ObjectsDataset(utils.Dataset):
         for i, (root, dirs, files) in enumerate(os.walk(dataset_dir)):
             root_split = root.split('/')
             if root_split[-1] == 'image': # and subset in root_split:
-                for file in files:
-                    parentRoot = '/'.join(root.split('/')[:-1])
-                    depth_path = os.path.join(parentRoot, 'depth', 'depth' + file[5:])
-                    mask_path = os.path.join(parentRoot, 'mask', 'mask_' + file)
-                    # only add if corresponding mask exists
-                    path = os.path.join(root, file)
-                    if os.path.isfile(depth_path) and os.path.isfile(mask_path):
-                        if (os.stat(path).st_size):
-                            im = Image.open(path)
-                            width, height = im.size
-                            self.add_image(
-                                "seg_sceneNN",
-                                image_id=i,
-                                path=path,
-                                depth_path=depth_path,
-                                mask_path=mask_path,
-                                width=width,
-                                height=height)
-                            count += 1
-                    else:
-                        print('Warning: No depth or mask found for ' + path)
+                for j, file in enumerate(files):
+                    if j % (skip + 1) == 0:
+                        parentRoot = '/'.join(root.split('/')[:-1])
+                        depth_path = os.path.join(parentRoot, 'depth', 'depth' + file[5:])
+                        mask_path = os.path.join(parentRoot, 'mask', 'mask_' + file)
+                        # only add if corresponding mask exists
+                        path = os.path.join(root, file)
+                        if os.path.isfile(depth_path) and os.path.isfile(mask_path):
+                            if (os.stat(path).st_size):
+                                width, height = (640, 480)
+                                self.add_image(
+                                    "seg_sceneNN",
+                                    image_id=i,
+                                    path=path,
+                                    depth_path=depth_path,
+                                    mask_path=mask_path,
+                                    width=width,
+                                    height=height)
+                                count += 1
+                        else:
+                            print('Warning: No depth or mask found for ' + path)
         print('added {} images for {}'.format(count, subset))
 
     def load_image(self, image_id, depth=True):
@@ -104,7 +104,7 @@ class ObjectsDataset(utils.Dataset):
         unique, unique_inverse = np.unique(seg.flatten(), return_inverse=True)
         object_instance_masks = np.reshape(unique_inverse, seg.shape)
         instances = np.unique(unique_inverse).tolist()
-        instances.remove(0)
+        # instances.remove(0)
         instance_masks = []
         for i, instance in enumerate(instances):
             vfunc = np.vectorize(lambda a: 1 if a == instance else 0)
