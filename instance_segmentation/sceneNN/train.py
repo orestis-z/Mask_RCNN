@@ -17,8 +17,9 @@ MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
 # Path to ADE20K trained weights
 ADE20K_MODEL_PATH = os.path.join(ROOT_DIR, "logs/seg_ade20k20171109T1726/mask_rcnn_seg_ade20k_0018.h5")
+WEIGHTS_PATH = os.path.join(ROOT_DIR, "logs/seg_scenenn20171109T1726/mask_rcnn_seg_scenenn_0153.h5")
 
-SCENENN_DIR = "/home/orestisz/data/sceneNN"
+SCENENN_DIR = "/external_datasets/sceneNN"
 
 config = ObjectsConfig()
 config.display()
@@ -37,6 +38,8 @@ print('loading weights...')
 if init_with == "ade20k":
     model.load_weights(ADE20K_MODEL_PATH, by_name=True,
                    exclude=exclude)
+if init_with == "custom":
+    model.load_weights(WEIGHTS_PATH, by_name=True)
 elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
@@ -69,4 +72,5 @@ print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE,
             epochs=1000,
-            layers='|'.join(exclude))
+            layers='all')
+            # layers='|'.join(exclude))

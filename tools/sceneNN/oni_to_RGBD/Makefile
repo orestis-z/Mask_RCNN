@@ -1,5 +1,5 @@
-all: OniToRGBD.o
-	g++ -o OniToRGBD OniToRGBD.o -lfreeimage -lOpenNI -lboost_system -lboost_filesystem
+all: oniToRGBD.o
+	g++ -o oniToRGBD oniToRGBD.o -lfreeimage -lOpenNI -lboost_system -lboost_filesystem
 
-OniToRGBD.o: OniToRGBD.cpp
-	g++ -g -c OniToRGBD.cpp -o OniToRGBD.o -I/usr/include/ni/
+oniToRGBD.o: oniToRGBD.cpp
+	g++ -g -c oniToRGBD.cpp -o oniToRGBD.o -I/usr/include/ni/
