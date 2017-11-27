@@ -33,7 +33,7 @@ class ObjectsDataset(CocoDataset):
     objects (triangles, squares, circles) placed randomly on a blank surface.
     The images are generated on the fly. No file access required.
     """
-    def load_coco(self, dataset_dir, subset, class_ids=None):
+    def load(self, dataset_dir, subset, class_ids=None):
         """Load a subset of the COCO dataset.
         dataset_dir: The root directory of the COCO dataset.
         subset: What to load (train, val, minival, val35k)

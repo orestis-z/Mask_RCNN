@@ -327,7 +327,7 @@ class Dataset(object):
         """
         return self.image_info[image_id]["path"]
 
-    def load_image(self, image_id):
+    def load_image(self, image_id, depth=False):
         """Load the specified image and return a [H,W,3] Numpy array.
         """
         # Load image
@@ -393,9 +393,10 @@ def resize_image(image, min_dim=None, max_dim=None, padding=False):
     if scale != 1:
         # image = scipy.misc.imresize(
             # image, (round(h * scale), round(w * scale)))
+        depth_max = np.max(image[:, :, 3])
         image = scipy.ndimage.zoom(image, [scale, scale, 1])
         if image.shape[2] == 4:
-            depth = image[:, :, 3]
+            depth = np.clip(image[:, :, 3], 0, depth_max)
             image = np.clip(image[:, :, 0:3], 0, 255)
             image = np.dstack((image, depth))
         else:

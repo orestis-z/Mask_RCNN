@@ -59,12 +59,12 @@ elif init_with == "last":
 
 # Training dataset
 dataset_train = ObjectsDataset()
-dataset_train.load_sceneNN(SCENENN_DIR, "training")
+dataset_train.load(SCENENN_DIR, "training")
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load_sceneNN(SCENENN_DIR, "validation")
+dataset_val.load((SCENENN_DIR, "validation")
 dataset_val.prepare()
 
 # Fine tune all layers

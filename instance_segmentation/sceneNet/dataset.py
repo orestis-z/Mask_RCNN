@@ -48,7 +48,7 @@ class ObjectsDataset(utils.Dataset):
     #     super().__init__()
     #     self.class_info = []
 
-    def load_sceneNet(self, dataset_dir, subset, skip=19):
+    def load(self, dataset_dir, subset, skip=19):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
 
@@ -61,8 +61,10 @@ class ObjectsDataset(utils.Dataset):
         self.add_class("seg_sceneNet", 1, 'object')
 
         count = 0
+        exclude = set(['depth', 'instance'])
         # Add images
-        for i, (root, dirs, files) in enumerate(os.walk(dataset_dir)):
+        for i, (root, dirs, files) in enumerate(os.walk(dataset_dir, topdown=True)):
+            dirs[:] = [d for d in dirs if d not in exclude]
             root_split = root.split('/')
             if root_split[-1] == 'photo': # and subset in root_split:
                 print('Loading {} data from {}, {}'.format(subset, root_split[-3], root_split[-2]))

@@ -15,12 +15,11 @@ from instance_segmentation.object_config import Config
 import utils
 
 class ObjectsConfig(Config):
-    NAME = "seg_sceneNN"
-    # NAME = "seg_ADE20K"
+    NAME = "2D-3D-S"
 
     MODE = 'RGBD'
 
-    IMAGE_MIN_DIM = 512
+    IMAGE_MIN_DIM = 640
     IMAGE_MAX_DIM = 640
 
     # IMAGES_PER_GPU = 2
@@ -30,39 +29,40 @@ class ObjectsConfig(Config):
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
 
 class ObjectsDataset(utils.Dataset):
-    def load(self, dataset_dir, subset, skip=9):
+    def load(self, dataset_dir, subset, skip=0):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
 
         # Add classes
-        self.add_class("seg_sceneNN", 1, "object")
+        self.add_class("2D-3D-S", 1, "object")
 
         count = 0
-        exclude = set(['depth', 'mask'])
+        exclude = set(['3d', 'pano', 'raw', 'sensor', 'semantic_pretty', 'normal', 'pose', 'depth', 'semantic'])
         # Add images
         for i, (root, dirs, files) in enumerate(os.walk(dataset_dir, topdown=True)):
             dirs[:] = [d for d in dirs if d not in exclude]
             root_split = root.split('/')
-            if root_split[-1] == 'image': # and subset in root_split:
+            if root_split[-2] == 'data' and root_split[-1] == 'rgb': # and subset in root_split:
+                print(root_split[-3])
                 for j, file in enumerate(files):
                     if j % (skip + 1) == 0:
                         parentRoot = '/'.join(root.split('/')[:-1])
-                        depth_path = os.path.join(parentRoot, 'depth', 'depth' + file[5:])
-                        mask_path = os.path.join(parentRoot, 'mask', 'mask_' + file)
+                        depth_path = os.path.join(parentRoot, 'depth', file[:-7] + 'depth.png')
+                        mask_path = os.path.join(parentRoot, 'semantic', file[:-7] + 'semantic.png')
                         # only add if corresponding mask exists
                         path = os.path.join(root, file)
                         if os.path.isfile(depth_path) and os.path.isfile(mask_path):
-                            if (os.stat(path).st_size):
-                                width, height = (640, 480)
-                                self.add_image(
-                                    "seg_sceneNN",
-                                    image_id=i,
-                                    path=path,
-                                    depth_path=depth_path,
-                                    mask_path=mask_path,
-                                    width=width,
-                                    height=height)
-                                count += 1
+                            # if (os.stat(path).st_size):
+                            width, height = (1080, 1080)
+                            self.add_image(
+                                "2D-3D-S",
+                                image_id=i,
+                                path=path,
+                                depth_path=depth_path,
+                                mask_path=mask_path,
+                                width=width,
+                                height=height)
+                            count += 1
                         else:
                             print('Warning: No depth or mask found for ' + path)
         print('added {} images for {}'.format(count, subset))
@@ -74,6 +74,7 @@ class ObjectsDataset(utils.Dataset):
         image = super(ObjectsDataset, self).load_image(image_id)
         if depth:
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
+            depth = np.clip(depth, 0, 5500)
             rgbd = np.dstack((image, depth))
             return rgbd
         else:
@@ -93,33 +94,26 @@ class ObjectsDataset(utils.Dataset):
         R = img[:, :, 0]
         G = img[:, :, 1]
         B = img[:, :, 2]
-        A = img[:, :, 3]
 
-        # port to python from cpp script:
-        # https://github.com/scenenn/shrec17/blob/master/mask_from_label/mask_from_label.cpp
-        seg = np.bitwise_or(np.bitwise_or(np.bitwise_or(
-                np.left_shift(R, 24),
-                np.left_shift(G, 16)),
-                np.left_shift(B, 8)),
-                A)
+        img = R * 256 * 256 + G * 256 + B
 
-        # object_class_masks = (R.astype(np.uint16) / 10) * 256 + G.astype(np.uint16)
-        unique, unique_inverse = np.unique(seg.flatten(), return_inverse=True)
-        object_instance_masks = np.reshape(unique_inverse, seg.shape)
-        instances = np.unique(unique_inverse).tolist()
-        # instances.remove(0)
+        instances, unique_inverse = np.unique(img.flatten(), return_inverse=True)
+        object_instance_mask_idx = np.reshape(unique_inverse, img.shape)
+        instance_idx = np.unique(unique_inverse).tolist()
+        instance_idx.remove(0)
         instance_masks = []
-        for i, instance in enumerate(instances):
-            vfunc = np.vectorize(lambda a: 1 if a == instance else 0)
-            instance_masks.append(vfunc(object_instance_masks))
+        for i, instance_i in enumerate(instance_idx):
+            vfunc = np.vectorize(lambda a: 1 if a == instance_i else 0)
+            instance_masks.append(vfunc(object_instance_mask_idx))
         if not instance_masks:
-            raise ValueError("No instances for image {}".format(mask_path))
+            raise ValueError("No instances for image {}".format(instance_path))
         masks = np.stack(instance_masks, axis=2)
-        class_ids = np.array([1] * len(instances), dtype=np.int32)
+        # class_ids = np.array(instances, dtype=np.int32)
+        class_ids = np.array([1] * len(instance_idx), dtype=np.int32)
 
         return masks, class_ids
 
 if __name__ == '__main__':
     dataset = ObjectsDataset()
-    dataset.load_sceneNN('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
+    dataset.load('/external_datasets/2D-3D-S', 'testing', skip=199)
     masks, class_ids = dataset.load_mask(0)

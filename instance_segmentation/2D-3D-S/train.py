@@ -15,39 +15,31 @@ from model import log
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
-# Path to COCO trained weights
-SCENENN_MODEL_PATH = os.path.join(ROOT_DIR, "logs/mask_rcnn_seg_scenenn_0101.h5")
+# Path to ADE20K trained weights
+ADE20K_MODEL_PATH = os.path.join(ROOT_DIR, "logs/seg_ade20k20171109T1726/mask_rcnn_seg_ade20k_0018.h5")
+WEIGHTS_PATH = os.path.join(ROOT_DIR, "logs/seg_scenenn20171109T1726/mask_rcnn_seg_scenenn_0291.h5")
 
-SCENENET_DIR = "/external_datasets/SceneNet_RGBD"
+DATASET_DIR = "/external_datasets/2D-3D-S"
 
 config = ObjectsConfig()
 config.display()
-
-# Training dataset
-dataset_train = ObjectsDataset()
-dataset_train.load(SCENENET_DIR, "training")
-dataset_train.prepare()
-
-# Validation dataset
-dataset_val = ObjectsDataset()
-dataset_val.load(SCENENET_DIR, "validation")
-dataset_val.prepare()
 
 # Create model in training mode
 print('creating model..')
 model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
-exclude = []
+exclude = ["conv1"]
 
 # # Which weights to start with?
-init_with = "last"  # scenenn or last
+init_with = "custom"  # ade20k or last
 
 print('loading weights...')
-if init_with == "scenenn":
-    model.load_weights(SCENENN_MODEL_PATH, by_name=True,
-                       exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
-                                "mrcnn_bbox", "mrcnn_mask"])
+if init_with == "ade20k":
+    model.load_weights(ADE20K_MODEL_PATH, by_name=True,
+                   exclude=exclude)
+if init_with == "custom":
+    model.load_weights(WEIGHTS_PATH, by_name=True)
 elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
@@ -65,9 +57,20 @@ elif init_with == "last":
 #             epochs=j, 
 #             layers='heads')
 
+# Training dataset
+dataset_train = ObjectsDataset()
+dataset_train.load(DATASET_DIR, "training")
+dataset_train.prepare()
+
+# Validation dataset
+dataset_val = ObjectsDataset()
+dataset_val.loa((DATASET_DIR, "validation")
+dataset_val.prepare()
+
 # Fine tune all layers
 print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE,
             epochs=1000,
             layers='all')
+            # layers='|'.join(exclude))

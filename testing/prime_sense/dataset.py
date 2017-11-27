@@ -30,7 +30,7 @@ class ObjectsConfig(Config):
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
 
 class ObjectsDataset(utils.Dataset):
-    def load_sceneNN(self, dataset_dir, skip=19):
+    def load(self, dataset_dir, skip=19):
         # Add classes
         self.add_class("prime_sense", 1, "object")
         count = 0
@@ -74,5 +74,5 @@ class ObjectsDataset(utils.Dataset):
 
 if __name__ == '__main__':
     dataset = ObjectsDataset()
-    dataset.load_sceneNN('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
+    dataset.load('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
     masks, class_ids = dataset.load_mask(0)

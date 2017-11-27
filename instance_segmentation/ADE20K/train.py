@@ -24,12 +24,12 @@ config.display()
 
 # Training dataset
 dataset_train = ObjectsDataset()
-dataset_train.load_ADE20K(ADE20K_DIR, "training")
+dataset_train.load(ADE20K_DIR, "training")
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load_ADE20K(ADE20K_DIR, "validation")
+dataset_val.load(ADE20K_DIR, "validation")
 dataset_val.prepare()
 
 # Create model in training mode

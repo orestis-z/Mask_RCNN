@@ -24,12 +24,12 @@ config.display()
 
 # Training dataset
 dataset_train = ObjectsDataset()
-dataset_train.load_coco(COCO_DIR, "train")
+dataset_train.load(COCO_DIR, "train")
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load_coco(COCO_DIR, "val")
+dataset_val.load(COCO_DIR, "val")
 dataset_val.prepare()
 
 # Create model in training mode
