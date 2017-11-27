@@ -134,7 +134,8 @@ class CocoDataset(utils.Dataset):
                 path=os.path.join(image_dir, coco.imgs[i]['file_name']),
                 width=coco.imgs[i]["width"],
                 height=coco.imgs[i]["height"],
-                annotations=coco.loadAnns(coco.getAnnIds(imgIds=[i], catIds=class_ids, iscrowd=False)))
+                annotations=coco.loadAnns(coco.getAnnIds(
+                    imgIds=[i], catIds=class_ids, iscrowd=None)))
         if return_coco:
             return coco
 
@@ -170,6 +171,14 @@ class CocoDataset(utils.Dataset):
                 # and end up rounded out. Skip those objects.
                 if m.max() < 1:
                     continue
+                # Is it a crowd? If so, use a negative class ID.
+                if annotation['iscrowd']:
+                    # Use negative class ID for crowds
+                    class_id *= -1
+                    # For crowd masks, annToMask() sometimes returns a mask
+                    # smaller than the given dimensions. If so, resize it.
+                    if m.shape[0] != image_info["height"] or m.shape[1] != image_info["width"]:
+                        m = np.ones([image_info["height"], image_info["width"]], dtype=bool)
                 instance_masks.append(m)
                 class_ids.append(class_id)
 
@@ -345,6 +354,7 @@ if __name__ == '__main__':
             # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
             GPU_COUNT = 1
             IMAGES_PER_GPU = 1
+            DETECTION_MIN_CONFIDENCE = 0
         config = InferenceConfig()
     config.display()
 
@@ -386,10 +396,9 @@ if __name__ == '__main__':
         dataset_val.load_coco(args.dataset, "minival")
         dataset_val.prepare()
 
-        # This training schedule is an example. Update to fit your needs.
+        # *** This training schedule is an example. Update to your needs ***
 
         # Training - Stage 1
-        # Adjust epochs and layers as needed
         print("Training network heads")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
@@ -398,18 +407,18 @@ if __name__ == '__main__':
 
         # Training - Stage 2
         # Finetune layers from ResNet stage 4 and up
-        print("Training Resnet layer 4+")
+        print("Fine tune Resnet stage 4 and up")
         model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE / 10,
-                    epochs=100,
+                    learning_rate=config.LEARNING_RATE,
+                    epochs=120,
                     layers='4+')
 
         # Training - Stage 3
-        # Finetune layers from ResNet stage 3 and up
-        print("Training Resnet layer 3+")
+        # Fine tune all layers
+        print("Fine tune all layers")
         model.train(dataset_train, dataset_val,
-                    learning_rate=config.LEARNING_RATE / 100,
-                    epochs=200,
+                    learning_rate=config.LEARNING_RATE / 10,
+                    epochs=160,
                     layers='all')
 
     elif args.command == "evaluate":
