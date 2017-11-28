@@ -29,7 +29,7 @@ model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
 # # Which weights to start with?
-init_with = "custom"  # custom or last
+init_with = "last"  # custom or last
 
 print('loading weights...')
 if init_with == "custom":

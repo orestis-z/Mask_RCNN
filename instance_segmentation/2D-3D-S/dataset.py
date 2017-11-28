@@ -99,8 +99,8 @@ class ObjectsDataset(utils.Dataset):
 
         instances = np.unique(img.flatten())
         instances = instances.tolist()
-        if 0 in instances:
-            instances.remove(0)
+        # if 0 in instances:
+        #     instances.remove(0)
         n_instances = len(instances)
         masks = np.zeros((img.shape[0], img.shape[1], n_instances))
         for i, instance in enumerate(instances):
