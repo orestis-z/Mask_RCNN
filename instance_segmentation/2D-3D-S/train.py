@@ -16,7 +16,6 @@ from model import log
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
 # Path to ADE20K trained weights
-ADE20K_MODEL_PATH = os.path.join(ROOT_DIR, "logs/seg_ade20k20171109T1726/mask_rcnn_seg_ade20k_0018.h5")
 WEIGHTS_PATH = os.path.join(ROOT_DIR, "logs/seg_scenenn20171109T1726/mask_rcnn_seg_scenenn_0291.h5")
 
 DATASET_DIR = "/external_datasets/2D-3D-S"
@@ -29,15 +28,10 @@ print('creating model..')
 model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
-exclude = ["conv1"]
-
 # # Which weights to start with?
-init_with = "custom"  # ade20k or last
+init_with = "custom"  # custom or last
 
 print('loading weights...')
-if init_with == "ade20k":
-    model.load_weights(ADE20K_MODEL_PATH, by_name=True,
-                   exclude=exclude)
 if init_with == "custom":
     model.load_weights(WEIGHTS_PATH, by_name=True)
 elif init_with == "last":
@@ -64,7 +58,7 @@ dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.loa((DATASET_DIR, "validation")
+dataset_val.load(DATASET_DIR, "testing")
 dataset_val.prepare()
 
 # Fine tune all layers

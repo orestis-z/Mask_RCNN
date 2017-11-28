@@ -64,7 +64,7 @@ dataset_train.prepare()
 
 # Validation dataset
 dataset_val = ObjectsDataset()
-dataset_val.load((SCENENN_DIR, "validation")
+dataset_val.load(SCENENN_DIR, "validation")
 dataset_val.prepare()
 
 # Fine tune all layers

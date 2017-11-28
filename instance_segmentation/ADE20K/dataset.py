@@ -62,17 +62,18 @@ class ObjectsDataset(utils.Dataset):
         # port to python from matlab script:
         # http://groups.csail.mit.edu/vision/datasets/ADE20K/code/loadAde20K.m
         # object_class_masks = (R.astype(np.uint16) / 10) * 256 + G.astype(np.uint16)
-        unique, unique_inverse = np.unique(B.flatten(), return_inverse=True)
-        object_instance_masks = np.reshape(unique_inverse, B.shape)
-        instances = np.unique(unique_inverse).tolist()
-        instances.remove(0)
-        instance_masks = []
+        instances = np.unique(B.flatten())
+        instances = instances.tolist()
+        if 0 in instances:
+            instances.remove(0)
+        n_instances = len(instances)
+        masks = np.zeros((img.shape[0], img.shape[1], n_instances))
         for i, instance in enumerate(instances):
-            vfunc = np.vectorize(lambda a: 1 if a == instance else 0)
-            instance_masks.append(vfunc(object_instance_masks))
+            masks[:, :, i] = (B == instance).astype(np.uint8)
+        if not n_instances:
+            raise ValueError("No instances for image {}".format(instance_path))
 
-        masks = np.stack(instance_masks, axis=2)
-        class_ids = np.array([1] * len(instances), dtype=np.int32)
+        class_ids = np.array([1] * n_instances, dtype=np.int32)
 
         return masks, class_ids
 

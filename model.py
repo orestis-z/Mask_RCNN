@@ -24,7 +24,7 @@ import tensorflow as tf
 
 # Limit the resource usage for tensorflow backend
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.45
+config.gpu_options.per_process_gpu_memory_fraction = 0.5
 config.gpu_options.visible_device_list = "0"
 tf_session = tf.Session(config=config)
 from keras.backend.tensorflow_backend import set_session

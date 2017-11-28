@@ -19,11 +19,11 @@ class ObjectsConfig(Config):
 
     MODE = 'RGBD'
 
-    IMAGE_MIN_DIM = 640
-    IMAGE_MAX_DIM = 640
+    IMAGE_MIN_DIM = 448
+    IMAGE_MAX_DIM = 448
 
     # IMAGES_PER_GPU = 2
-    # LEARNING_RATE = 0.02
+    LEARNING_RATE = 0.002
 
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
@@ -45,7 +45,7 @@ class ObjectsDataset(utils.Dataset):
             if root_split[-2] == 'data' and root_split[-1] == 'rgb': # and subset in root_split:
                 print(root_split[-3])
                 for j, file in enumerate(files):
-                    if j % (skip + 1) == 0:
+                    if file[-4:] == '.png' and j % (skip + 1) == 0:
                         parentRoot = '/'.join(root.split('/')[:-1])
                         depth_path = os.path.join(parentRoot, 'depth', file[:-7] + 'depth.png')
                         mask_path = os.path.join(parentRoot, 'semantic', file[:-7] + 'semantic.png')
@@ -97,23 +97,22 @@ class ObjectsDataset(utils.Dataset):
 
         img = R * 256 * 256 + G * 256 + B
 
-        instances, unique_inverse = np.unique(img.flatten(), return_inverse=True)
-        object_instance_mask_idx = np.reshape(unique_inverse, img.shape)
-        instance_idx = np.unique(unique_inverse).tolist()
-        instance_idx.remove(0)
-        instance_masks = []
-        for i, instance_i in enumerate(instance_idx):
-            vfunc = np.vectorize(lambda a: 1 if a == instance_i else 0)
-            instance_masks.append(vfunc(object_instance_mask_idx))
-        if not instance_masks:
+        instances = np.unique(img.flatten())
+        instances = instances.tolist()
+        if 0 in instances:
+            instances.remove(0)
+        n_instances = len(instances)
+        masks = np.zeros((img.shape[0], img.shape[1], n_instances))
+        for i, instance in enumerate(instances):
+            masks[:, :, i] = (img == instance).astype(np.uint8)
+        if not n_instances:
             raise ValueError("No instances for image {}".format(instance_path))
-        masks = np.stack(instance_masks, axis=2)
-        # class_ids = np.array(instances, dtype=np.int32)
-        class_ids = np.array([1] * len(instance_idx), dtype=np.int32)
+
+        class_ids = np.array([1] * n_instances, dtype=np.int32)
 
         return masks, class_ids
 
 if __name__ == '__main__':
     dataset = ObjectsDataset()
-    dataset.load('/external_datasets/2D-3D-S', 'testing', skip=199)
+    dataset.load('/external_datasets/2D-3D-S', 'testing', skip=999)
     masks, class_ids = dataset.load_mask(0)

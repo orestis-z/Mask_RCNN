@@ -111,18 +111,17 @@ class ObjectsDataset(utils.Dataset):
         instance_path = self.image_info[image_id]['instance_path']
         img = np.asarray(Image.open(instance_path))
 
-        instances, unique_inverse = np.unique(img.flatten(), return_inverse=True)
-        object_instance_mask_idx = np.reshape(unique_inverse, img.shape)
-        instance_idx = np.unique(unique_inverse)
-        instance_masks = []
-        for i, instance_i in enumerate(instance_idx):
-            vfunc = np.vectorize(lambda a: 1 if a == instance_i else 0)
-            instance_masks.append(vfunc(object_instance_mask_idx))
-        if not instance_masks:
+        instances = np.unique(img.flatten())
+        # instances = instances.tolist()
+        # instances.remove(0)
+        n_instances = len(instances)
+        masks = np.zeros((img.shape[0], img.shape[1], n_instances))
+        for i, instance in enumerate(instances):
+            masks[:, :, i] = (img == instance).astype(np.uint8)
+        if not n_instances:
             raise ValueError("No instances for image {}".format(instance_path))
-        masks = np.stack(instance_masks, axis=2)
-        # class_ids = np.array(instances, dtype=np.int32)
-        class_ids = np.array([1] * len(instances), dtype=np.int32)
+
+        class_ids = np.array([1] * n_instances, dtype=np.int32)
 
         return masks, class_ids
 
