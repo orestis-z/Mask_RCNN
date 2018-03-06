@@ -120,5 +120,5 @@ class ObjectsDataset(utils.Dataset):
 
 if __name__ == '__main__':
     dataset = ObjectsDataset()
-    dataset.load'/home/orestisz/data/ADE20K_2016_07_26', 'validation')
+    dataset.load('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
     masks, class_ids = dataset.load_mask(0)

@@ -23,7 +23,7 @@ class ObjectsConfig(Config):
     IMAGE_MAX_DIM = 448
 
     # IMAGES_PER_GPU = 2
-    LEARNING_RATE = 0.002
+    LEARNING_RATE = 0.0002
 
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
