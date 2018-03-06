@@ -4,3 +4,4 @@ mask_rcnn_coco.h5
 *.pyc
 *.o
 tools/sceneNN/oni_to_RGBD/oniToRGBD
+.idea/
