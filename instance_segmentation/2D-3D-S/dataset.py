@@ -13,17 +13,30 @@ if ROOT_DIR not in sys.path:
 from instance_segmentation.object_config import Config
 
 import utils
+import time
+
+class Timer(object):
+    def __init__(self, name=None):
+        self.name = name
+
+    def __enter__(self):
+        self.tstart = time.time()
+
+    def __exit__(self, type, value, traceback):
+        if self.name:
+            print('[%s]' % self.name)
+        print('Elapsed: %s' % (time.time() - self.tstart))
 
 class ObjectsConfig(Config):
-    NAME = "2D-3D-S"
+    NAME = "2D_3D_S"
 
     MODE = 'RGBD'
 
     IMAGE_MIN_DIM = 448
     IMAGE_MAX_DIM = 448
 
-    # IMAGES_PER_GPU = 2
-    LEARNING_RATE = 0.0002
+    IMAGES_PER_GPU = 2
+    LEARNING_RATE = 0.002
 
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
@@ -80,6 +93,11 @@ class ObjectsDataset(utils.Dataset):
         else:
             return image
 
+    def to_mask(img, instance):
+        return (img == instance).astype(np.uint8)
+
+    to_mask_v = np.vectorize(to_mask, signature='(n,m),(k)->(n,m)')
+
     def load_mask(self, image_id):
         """Load instance masks for the given image.
 
@@ -102,9 +120,8 @@ class ObjectsDataset(utils.Dataset):
         # if 0 in instances:
         #     instances.remove(0)
         n_instances = len(instances)
-        masks = np.zeros((img.shape[0], img.shape[1], n_instances))
-        for i, instance in enumerate(instances):
-            masks[:, :, i] = (img == instance).astype(np.uint8)
+        masks = np.repeat(np.expand_dims(img, axis=2), n_instances, axis=2) # bottleneck code
+        masks = self.to_mask_v(masks, instances)
         if not n_instances:
             raise ValueError("No instances for image {}".format(instance_path))
 

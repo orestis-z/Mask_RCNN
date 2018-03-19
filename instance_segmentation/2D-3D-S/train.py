@@ -16,7 +16,7 @@ from model import log
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
 # Path to ADE20K trained weights
-WEIGHTS_PATH = os.path.join(ROOT_DIR, "logs/seg_scenenn20171109T1726/mask_rcnn_seg_scenenn_0291.h5")
+WEIGHTS_PATH = os.path.join(ROOT_DIR, "logs/2d-3d-s20180314T1711/mask_rcnn_2d-3d-s_0167.h5")
 
 DATASET_DIR = "/external_datasets/2D-3D-S"
 
@@ -30,6 +30,7 @@ model = modellib.MaskRCNN(mode="training", config=config,
 
 # # Which weights to start with?
 init_with = "last"  # custom or last
+# init_with = "custom"  # custom or last
 
 print('loading weights...')
 if init_with == "custom":

@@ -24,7 +24,7 @@ import tensorflow as tf
 
 # Limit the resource usage for tensorflow backend
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.5
+config.gpu_options.per_process_gpu_memory_fraction = 0.7
 tf_session = tf.Session(config=config)
 from keras.backend.tensorflow_backend import set_session
 set_session(tf_session)
@@ -1825,7 +1825,7 @@ class MaskRCNN():
         # Bottom-up Layers
         # Returns a list of the last layers of each stage, 5 in total.
         # Don't create the thead (stage 5), so we pick the 4th item in the list.
-        _, C2, C3, C4, C5 = resnet_graph(input_image, "resnet101", stage5=True)
+        _, C2, C3, C4, C5 = resnet_graph(input_image, "resnet50", stage5=True)
         # Top-down Layers
         # TODO: add assert to varify feature map sizes match what's in config
         P5 = KL.Conv2D(256, (1, 1), name='fpn_c5p5')(C5)
@@ -2035,7 +2035,7 @@ class MaskRCNN():
                 dirs.append((dir_name, checkpoints))
         return dirs
 
-    def load_weights(self, filepath, by_name=False, exclude=None):
+    def load_weights(self, filepath, by_name=False, exclude=None, include=None):
         """Modified version of the correspoding Keras function with
         the addition of multi-GPU support and the ability to exclude
         some layers from loading.
@@ -2044,7 +2044,9 @@ class MaskRCNN():
         import h5py
         from keras.engine import topology
 
-        if exclude:
+        assert(include is None or exclude is None)
+
+        if exclude or include:
             by_name = True
 
         if h5py is None:
@@ -2062,6 +2064,8 @@ class MaskRCNN():
         # Exclude some layers
         if exclude:
             layers = filter(lambda l: l.name not in exclude, layers)
+        elif include:
+            layers = filter(lambda l: l.name in exclude, layers)
 
         if by_name:
             topology.load_weights_from_hdf5_group_by_name(f, layers)
