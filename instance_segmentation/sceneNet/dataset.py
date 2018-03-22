@@ -18,11 +18,12 @@ class ObjectsConfig(Config):
     # NAME = "seg_ADE20K"
 
     MODE = 'RGBD'
+    BACKBONE = 'resnet50'
 
     IMAGE_MIN_DIM = 256
     IMAGE_MAX_DIM = 320
 
-    # IMAGES_PER_GPU = 2
+    IMAGES_PER_GPU = 4
     LEARNING_RATE = 0.002 / 10
     
     # Image mean (RGBD)

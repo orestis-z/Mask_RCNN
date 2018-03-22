@@ -38,16 +38,19 @@ print('creating model..')
 model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
-exclude = []
+# exclude = ["mrcnn_class_logits", "mrcnn_bbox_fc", 
+                                # "mrcnn_bbox", "mrcnn_mask"]
+exclude = ["conv1"]
 
 # # Which weights to start with?
-init_with = "last"  # scenenn or last
+init_with = "last"  # scenenn, last, imagenet
 
 print('loading weights...')
 if init_with == "scenenn":
     model.load_weights(SCENENN_MODEL_PATH, by_name=True,
-                       exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", 
-                                "mrcnn_bbox", "mrcnn_mask"])
+                       exclude=exclude)
+elif init_with == "imagenet":
+    model.load_weights(model.get_imagenet_weights(), by_name=True, exclude=exclude)
 elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
