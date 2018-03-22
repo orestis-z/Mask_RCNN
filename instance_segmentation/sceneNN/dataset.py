@@ -10,11 +10,11 @@ ROOT_DIR = os.path.abspath("../..")
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from instance_segmentation.object_config import Config
+from instance_segmentation.objects_config import Config
 
 import utils
 
-class ObjectsConfig(Config):
+class Config(Config):
     NAME = "seg_sceneNN"
     # NAME = "seg_ADE20K"
 
@@ -29,7 +29,7 @@ class ObjectsConfig(Config):
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
 
-class ObjectsDataset(utils.Dataset):
+class Dataset(utils.Dataset):
     def load(self, dataset_dir, subset, skip=9):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
@@ -71,7 +71,7 @@ class ObjectsDataset(utils.Dataset):
         """Load the specified image and return a [H,W,3+1] Numpy array.
         """
         # Load image & depth
-        image = super(ObjectsDataset, self).load_image(image_id)
+        image = super(Dataset, self).load_image(image_id)
         if depth:
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
             rgbd = np.dstack((image, depth))
@@ -119,6 +119,6 @@ class ObjectsDataset(utils.Dataset):
         return masks, class_ids
 
 if __name__ == '__main__':
-    dataset = ObjectsDataset()
+    dataset = Dataset()
     dataset.load('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
     masks, class_ids = dataset.load_mask(0)

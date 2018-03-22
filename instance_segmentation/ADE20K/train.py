@@ -19,16 +19,16 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
 ADE20K_DIR = "/home/orestisz/data/ADE20K_2016_07_26"
 
-config = ObjectsConfig()
+config = Config()
 config.display()
 
 # Training dataset
-dataset_train = ObjectsDataset()
+dataset_train = Dataset()
 dataset_train.load(ADE20K_DIR, "training")
 dataset_train.prepare()
 
 # Validation dataset
-dataset_val = ObjectsDataset()
+dataset_val = Dataset()
 dataset_val.load(ADE20K_DIR, "validation")
 dataset_val.prepare()
 

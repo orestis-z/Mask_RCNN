@@ -4,9 +4,9 @@ parentPath = os.path.abspath("..")
 if parentPath not in sys.path:
     sys.path.insert(0, parentPath)
 
-from config import Config as ConfigBase
+from config import Config
 
-class Config(ConfigBase):
+class ObjectsConfig(Config):
     """Configuration for training on the toy objects dataset.
     Derives from the base Config class and overrides values specific
     to the toy objects dataset.

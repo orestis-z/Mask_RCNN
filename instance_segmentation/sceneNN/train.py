@@ -21,7 +21,7 @@ WEIGHTS_PATH = os.path.join(ROOT_DIR, "logs/seg_scenenn20171109T1726/mask_rcnn_s
 
 SCENENN_DIR = "/external_datasets/sceneNN"
 
-config = ObjectsConfig()
+config = Config()
 config.display()
 
 # Create model in training mode
@@ -58,12 +58,12 @@ elif init_with == "last":
 #             layers='heads')
 
 # Training dataset
-dataset_train = ObjectsDataset()
+dataset_train = Dataset()
 dataset_train.load(SCENENN_DIR, "training")
 dataset_train.prepare()
 
 # Validation dataset
-dataset_val = ObjectsDataset()
+dataset_val = Dataset()
 dataset_val.load(SCENENN_DIR, "validation")
 dataset_val.prepare()
 

@@ -9,14 +9,14 @@ ROOT_DIR = os.path.abspath("../..")
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from instance_segmentation.object_config import Config
+from instance_segmentation.objects_config import ObjectsConfig
+from instance_segmentation.objects_dataset import ObjectsDataset
 
-import utils
 
-class ObjectsConfig(Config):
+class Config(ObjectsConfig):
     NAME = "seg_ADE20K"
 
-class ObjectsDataset(utils.Dataset):
+class Dataset(ObjectsDataset):
     def load(self, dataset_dir, subset):
         assert(subset == 'training' or subset == 'validation')
         index = loadmat(os.path.join(dataset_dir, 'index_ade20k.mat'))['index']
@@ -78,6 +78,6 @@ class ObjectsDataset(utils.Dataset):
         return masks, class_ids
 
 if __name__ == '__main__':
-    dataset = ObjectsDataset()
+    dataset = Dataset()
     dataset.load('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
     masks, class_ids = dataset.load_mask(0)

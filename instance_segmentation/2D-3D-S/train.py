@@ -20,7 +20,7 @@ WEIGHTS_PATH = os.path.join(ROOT_DIR, "logs/2d-3d-s20180314T1711/mask_rcnn_2d-3d
 
 DATASET_DIR = "/external_datasets/2D-3D-S"
 
-config = ObjectsConfig()
+config = Config()
 config.display()
 
 # Create model in training mode
@@ -53,12 +53,12 @@ elif init_with == "last":
 #             layers='heads')
 
 # Training dataset
-dataset_train = ObjectsDataset()
+dataset_train = Dataset()
 dataset_train.load(DATASET_DIR, "training")
 dataset_train.prepare()
 
 # Validation dataset
-dataset_val = ObjectsDataset()
+dataset_val = Dataset()
 dataset_val.load(DATASET_DIR, "testing")
 dataset_val.prepare()
 

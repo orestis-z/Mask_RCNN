@@ -17,18 +17,19 @@ import cv2
 from random import randint
 from pycocotools.coco import COCO
 
-from object_config import Config
-
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../..")
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+from instance_segmentation.objects_config import ObjectsConfig
+
 from coco import CocoDataset
 
-ObjectsConfig = Config
 
-class ObjectsDataset(CocoDataset):
+Config = BaseConfig
+
+class Dataset(CocoDataset):
     """Generates the objects synthetic dataset. The dataset consists of simple
     objects (triangles, squares, circles) placed randomly on a blank surface.
     The images are generated on the fly. No file access required.

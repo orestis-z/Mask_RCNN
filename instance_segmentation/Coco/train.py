@@ -19,16 +19,16 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
 COCO_DIR = "/home/orestisz/repositories/coco"
 
-config = ObjectsConfig()
+config = Config()
 config.display()
 
 # Training dataset
-dataset_train = ObjectsDataset()
+dataset_train = Dataset()
 dataset_train.load(COCO_DIR, "train")
 dataset_train.prepare()
 
 # Validation dataset
-dataset_val = ObjectsDataset()
+dataset_val = Dataset()
 dataset_val.load(COCO_DIR, "val")
 dataset_val.prepare()
 

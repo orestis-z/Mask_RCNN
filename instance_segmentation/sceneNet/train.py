@@ -20,16 +20,16 @@ SCENENN_MODEL_PATH = os.path.join(ROOT_DIR, "logs/mask_rcnn_seg_scenenn_0101.h5"
 
 SCENENET_DIR = "/external_datasets/SceneNet_RGBD"
 
-config = ObjectsConfig()
+config = Config()
 config.display()
 
 # Training dataset
-dataset_train = ObjectsDataset()
-dataset_train.load(SCENENET_DIR, "training")
-dataset_train.prepare()
+# dataset_train = Dataset()
+# dataset_train.load(SCENENET_DIR, "training")
+# dataset_train.prepare()
 
 # Validation dataset
-dataset_val = ObjectsDataset()
+dataset_val = Dataset()
 dataset_val.load(SCENENET_DIR, "validation")
 dataset_val.prepare()
 
@@ -43,7 +43,7 @@ model = modellib.MaskRCNN(mode="training", config=config,
 exclude = ["conv1"]
 
 # # Which weights to start with?
-init_with = "last"  # scenenn, last, imagenet
+init_with = "imagenet"  # scenenn, last, imagenet
 
 print('loading weights...')
 if init_with == "scenenn":
@@ -70,7 +70,7 @@ elif init_with == "last":
 
 # Fine tune all layers
 print('fine tuning all layers...')
-model.train(dataset_train, dataset_val, 
+model.train(dataset_val, dataset_val, 
             learning_rate=config.LEARNING_RATE,
             epochs=1000,
-            layers='all')
+            layers='conv1')
