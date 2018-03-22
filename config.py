@@ -27,6 +27,8 @@ class Config(object):
 
     MODE = 'RGB'
 
+    BACKBONE = 'resnet101'
+
     # NUMBER OF GPUs to use. For CPU training, use 1
     GPU_COUNT = 1
 

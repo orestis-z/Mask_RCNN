@@ -31,6 +31,7 @@ class ObjectsConfig(Config):
     NAME = "2D_3D_S"
 
     MODE = 'RGBD'
+    BACKBONE = 'resnet50'
 
     IMAGE_MIN_DIM = 448
     IMAGE_MAX_DIM = 448
