@@ -45,7 +45,7 @@ class Dataset(ObjectsDataset):
                 (12,'Wall'),
                 (13,'Window')]
 
-    def load(self, dataset_dir, subset, skip=19):
+    def load(self, dataset_dir, subset, skip=0):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
 
@@ -67,9 +67,9 @@ class Dataset(ObjectsDataset):
                 print('Loading {} data from {}, {}'.format(subset, root_split[-3], root_split[-2]))
                 for j, file in enumerate(files):
                     if j % (skip + 1) == 0:
-                        parentRoot = '/'.join(root.split('/')[:-1])
-                        depth_path = os.path.join(parentRoot, 'depth', file[:-4] + '.png')
-                        mask_path = os.path.join(parentRoot, 'instance', file[:-4] + '.png')
+                        parent_path = '/'.join(root.split('/')[:-1])
+                        depth_path = os.path.join(parent_path, 'depth', file[:-4] + '.png')
+                        mask_path = os.path.join(parent_path, 'instance', file[:-4] + '.png')
                         path = os.path.join(root, file)
 #                         im = Image.open(path)
 #                         width, height = im.size
@@ -80,6 +80,8 @@ class Dataset(ObjectsDataset):
                             path=path,
                             depth_path=depth_path,
                             mask_path=mask_path,
+                            parent_path=parent_path,
+                            file_name=file[:-4],
                             width=width,
                             height=height)
                         count += 1
@@ -113,5 +115,5 @@ class Dataset(ObjectsDataset):
 
 if __name__ == '__main__':
     dataset = Dataset()
-    dataset.generate_files('/external_datasets/SceneNet_RGBD', 'validation')
-    dataset.generate_files('/external_datasets/SceneNet_RGBD', 'testing')
+    dataset.generate_files('/external_datasets/SceneNet_RGBD', 'validation', path='generated')
+    dataset.generate_files('/external_datasets/SceneNet_RGBD', 'training', path='generated')
