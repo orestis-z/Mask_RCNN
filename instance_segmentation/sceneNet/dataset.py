@@ -17,7 +17,7 @@ class Config(ObjectsConfig):
     NAME = "seg_sceneNet"
     # NAME = "seg_ADE20K"
 
-    MODE = 'RGBD'
+    MODE = 'RGBDE'
     BACKBONE = 'resnet50'
 
     IMAGE_MIN_DIM = 256
@@ -27,7 +27,7 @@ class Config(ObjectsConfig):
     LEARNING_RATE = 0.02
     
     # Image mean (RGBD)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7, 255.0 / 2])
 
 class Dataset(ObjectsDataset):
     CLASSES = [ (0,'Unknown'),
@@ -45,7 +45,7 @@ class Dataset(ObjectsDataset):
                 (12,'Wall'),
                 (13,'Window')]
 
-    def load(self, dataset_dir, subset, skip=0):
+    def load(self, dataset_dir, subset, skip=2):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
 
@@ -117,3 +117,4 @@ if __name__ == '__main__':
     dataset = Dataset()
     dataset.generate_files('/external_datasets/SceneNet_RGBD', 'validation', path='generated')
     dataset.generate_files('/external_datasets/SceneNet_RGBD', 'training', path='generated')
+

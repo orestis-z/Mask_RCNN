@@ -24,12 +24,12 @@ config = Config()
 config.display()
 
 # Training dataset
-# dataset_train = Dataset()
-# dataset_train.load(SCENENET_DIR, "training")
-# dataset_train.prepare()
+dataset_train = Dataset()
+dataset_train.load(SCENENET_DIR, "training")
+dataset_train.prepare()
 
 # Validation dataset
-dataset_val = Dataset()
+dataset_val = Dataset(use_generated=False)
 dataset_val.load(SCENENET_DIR, "validation")
 dataset_val.prepare()
 
@@ -70,7 +70,7 @@ elif init_with == "last":
 
 # Fine tune all layers
 print('fine tuning all layers...')
-model.train(dataset_val, dataset_val, 
+model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE,
             epochs=1000,
             layers='conv1')
