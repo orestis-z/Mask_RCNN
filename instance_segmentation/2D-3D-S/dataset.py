@@ -11,7 +11,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from instance_segmentation.objects_config import ObjectsConfig
-from instance_segmentation.objects_dataset import ObjectsDataset
+from instance_segmentation.objects_dataset import ObjectsDataset, normalize
 
 import time
 
@@ -40,7 +40,7 @@ class Config(ObjectsConfig):
     LEARNING_RATE = 0.002
 
     # Image mean (RGBD)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2])
 
 class Dataset(ObjectsDataset):
     def load(self, dataset_dir, subset, skip=0):
@@ -81,14 +81,14 @@ class Dataset(ObjectsDataset):
                             print('Warning: No depth or mask found for ' + path)
         print('added {} images for {}'.format(count, subset))
 
-    def load_image(self, image_id, depth=True):
+    def load_image(self, image_id, mode="RGBD"):
         """Load the specified image and return a [H,W,3+1] Numpy array.
         """
         # Load image & depth
         image = super(Dataset, self).load_image(image_id)
-        if depth:
+        if mode == "RGBD":
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
-            depth = np.clip(depth, 0, 5500)
+            depth = normalize(np.clip(depth, 0, 5500))
             rgbd = np.dstack((image, depth))
             return rgbd
         else:

@@ -12,25 +12,25 @@ if ROOT_DIR not in sys.path:
 import model as modellib
 from model import log
 
+
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
 # Path to COCO trained weights
 SCENENN_MODEL_PATH = os.path.join(ROOT_DIR, "logs/mask_rcnn_seg_scenenn_0101.h5")
-
-SCENENET_DIR = "/external_datasets/SceneNet_RGBD"
+SCENENET_MODEL_PATH = os.path.join(MODEL_DIR, "seg_scenenet20171121T1912/mask_rcnn_seg_scenenet_0559.h5")
 
 config = Config()
 config.display()
 
 # Training dataset
 dataset_train = Dataset()
-dataset_train.load(SCENENET_DIR, "training")
+dataset_train.load("training")
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = Dataset(use_generated=False)
-dataset_val.load(SCENENET_DIR, "validation")
+dataset_val.load("validation")
 dataset_val.prepare()
 
 # Create model in training mode
@@ -40,17 +40,20 @@ model = modellib.MaskRCNN(mode="training", config=config,
 
 # exclude = ["mrcnn_class_logits", "mrcnn_bbox_fc", 
                                 # "mrcnn_bbox", "mrcnn_mask"]
-exclude = ["conv1"]
+exclude = []
 
 # # Which weights to start with?
-init_with = "imagenet"  # scenenn, last, imagenet
+init_with = "last"  # scenenn, last, imagenet
 
 print('loading weights...')
 if init_with == "scenenn":
     model.load_weights(SCENENN_MODEL_PATH, by_name=True,
                        exclude=exclude)
+elif init_with == "sceneNet":
+    model.load_weights(SCENENET_MODEL_PATH, by_name=True,
+                       exclude=exclude)
 elif init_with == "imagenet":
-    model.load_weights(model.get_imagenet_weights(), by_name=True, exclude=exclude)
+    model.load_weights(model.get_imagenet_weights(), by_name=True)
 elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
@@ -63,7 +66,7 @@ elif init_with == "last":
 # 2. Fine-tune all layers. For this simple example it's not necessary, but we're including it to show the process. Simply pass `layers="all` to train all layers.
 # Train the head branches
 # print('training heads...')
-# model.train(dataset_train, dataset_val, 
+# model.train(dataset_val, dataset_val, 
 #             learning_rate=config.LEARNING_RATE, 
 #             epochs=j, 
 #             layers='heads')
@@ -73,4 +76,4 @@ print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE,
             epochs=1000,
-            layers='conv1')
+            layers="all")

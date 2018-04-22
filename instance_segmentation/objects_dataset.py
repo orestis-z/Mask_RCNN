@@ -3,6 +3,7 @@ import math
 import numpy as np
 import cv2
 import skimage.io
+import random
 
 
 # Root directory of the project
@@ -21,28 +22,47 @@ def add_noise_gauss(img, var):
     gauss = gauss.reshape(*img.shape)
     return img + gauss
 
+def normalize(img):
+    return (1.0 - np.clip(img / np.max(img), 0, 1)) * 255
+
 class ObjectsDataset(utils.Dataset):
     def __init__(self, use_generated=False):
         super().__init__()
         self.use_generated = use_generated
 
-    def load_image(self, image_id, mode="RGBD"):
+    def load_image(self, image_id, mode="RGBD", canny_args=(100, 130), augment=True):
+        augment = self.subset == "training"
         if self.use_generated:
             parent_path = self.image_info[image_id]['parent_path']
             file_name = self.image_info[image_id]['file_name']
             return np.load(os.path.join(parent_path, img_path, file_name + ".npy"))
         image = super().load_image(image_id)
+        if augment:
+            off = 20
+            off_r = random.randint(-off, off)
+            off_g = random.randint(-off, off)
+            off_b = random.randint(-off, off)
+            image =  np.dstack((
+                image[:, :, 0] + off_r,
+                image[:, :, 1] + off_g,
+                image[:, :, 2] + off_b))
         if mode == "RGBDE":
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
-            edges = cv2.Canny(np.uint8(image), 120, 120)
+            depth = normalize(depth)
+            edges = cv2.Canny(np.uint8(image), *canny_args)
             rgbde = np.dstack((image, depth, edges))
-            return rgbde
+            ret = rgbde
         elif mode == "RGBD":
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
+            depth = normalize(depth)
             rgbd = np.dstack((image, depth))
-            return rgbd
+            ret = rgbd
         else:
-            return image
+            ret = image
+        ret = np.clip(ret, 0, 255)
+        if augment:
+            ret = skimage.util.random_noise(ret / 255, var=random.uniform(0, 0.01)) * 255
+        return ret
 
     def load_mask(self, image_id):
         parent_path = self.image_info[image_id]['parent_path']

@@ -6,6 +6,7 @@ if parentPath not in sys.path:
 
 from config import Config
 
+
 class ObjectsConfig(Config):
     """Configuration for training on the toy objects dataset.
     Derives from the base Config class and overrides values specific
@@ -13,8 +14,6 @@ class ObjectsConfig(Config):
     """
     # Give the configuration a recognizable name
     NAME = "objects"
-
-    IMAGES_PER_GPU = 1
 
     # # Number of classes (including background)
     NUM_CLASSES = 1 + 1  # background + 1 object

@@ -418,9 +418,9 @@ def resize_image(image, min_dim=None, max_dim=None, padding=False):
     if scale != 1:
         # image = scipy.misc.imresize(
             # image, (round(h * scale), round(w * scale)))
-        depth_max = np.max(image[:, :, 3])
         image = scipy.ndimage.zoom(image, [scale, scale, 1])
-        if image.shape[2] == 4:
+        if image.shape[2] > 3: # if RGBD
+            depth_max = np.max(image[:, :, 3])
             depth = np.clip(image[:, :, 3], 0, depth_max)
             image = np.clip(image[:, :, 0:3], 0, 255)
             image = np.dstack((image, depth))
