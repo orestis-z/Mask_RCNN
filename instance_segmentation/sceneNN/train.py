@@ -1,6 +1,4 @@
 import os, sys
-import tensorflow as tf
-import re
 
 from dataset import *
 
@@ -44,18 +42,7 @@ elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
 
-# ## Training
-# 
-# Train in two stages:
-# 1. Only the heads. Here we're freezing all the backbone layers and training only the randomly initialized layers (i.e. the ones that we didn't use pre-trained weights from MS COCO). To train only the head layers, pass `layers='heads'` to the `train()` function.
-# 
-# 2. Fine-tune all layers. For this simple example it's not necessary, but we're including it to show the process. Simply pass `layers="all` to train all layers.
-# Train the head branches
-# print('training heads...')
-# model.train(dataset_train, dataset_val, 
-#             learning_rate=config.LEARNING_RATE, 
-#             epochs=j, 
-#             layers='heads')
+## Training
 
 # Training dataset
 dataset_train = Dataset()

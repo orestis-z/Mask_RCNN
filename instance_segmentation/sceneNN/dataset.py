@@ -14,28 +14,30 @@ from instance_segmentation.objects_config import Config
 
 import utils
 
+
+NAME = "sceneNN"
+
 class Config(Config):
-    NAME = "seg_sceneNN"
-    # NAME = "seg_ADE20K"
+    NAME = NAME
 
     MODE = 'RGBD'
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 640
 
-    # IMAGES_PER_GPU = 2
-    # LEARNING_RATE = 0.02
-
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
 
 class Dataset(utils.Dataset):
+    WIDTH = 640
+    HEIGHT = 480
+
     def load(self, dataset_dir, subset, skip=9):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
 
         # Add classes
-        self.add_class("seg_sceneNN", 1, "object")
+        self.add_class(NAME, 1, "object")
 
         count = 0
         exclude = set(['depth', 'mask'])
@@ -53,9 +55,8 @@ class Dataset(utils.Dataset):
                         path = os.path.join(root, file)
                         if os.path.isfile(depth_path) and os.path.isfile(mask_path):
                             if (os.stat(path).st_size):
-                                width, height = (640, 480)
                                 self.add_image(
-                                    "seg_sceneNN",
+                                    NAME,
                                     image_id=i,
                                     path=path,
                                     depth_path=depth_path,
@@ -67,12 +68,12 @@ class Dataset(utils.Dataset):
                             print('Warning: No depth or mask found for ' + path)
         print('added {} images for {}'.format(count, subset))
 
-    def load_image(self, image_id, depth=True):
+    def load_image(self, image_id, mode="RGBD"):
         """Load the specified image and return a [H,W,3+1] Numpy array.
         """
         # Load image & depth
         image = super(Dataset, self).load_image(image_id)
-        if depth:
+        if mode == "RGBD":
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
             rgbd = np.dstack((image, depth))
             return rgbd
@@ -120,5 +121,6 @@ class Dataset(utils.Dataset):
 
 if __name__ == '__main__':
     dataset = Dataset()
-    dataset.load('/home/orestisz/data/ADE20K_2016_07_26', 'validation')
+    dataset.load('/external_datasets/sceneNN', 'validation', 0)
+    dataset.load('/external_datasets/sceneNN', 'training', 0)
     masks, class_ids = dataset.load_mask(0)

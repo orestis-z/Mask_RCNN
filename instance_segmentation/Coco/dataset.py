@@ -10,11 +10,7 @@ Written by Waleed Abdulla
 """
 
 import os, sys
-import math
-import random
 import numpy as np
-import cv2
-from random import randint
 from pycocotools.coco import COCO
 
 # Root directory of the project
@@ -27,7 +23,7 @@ from instance_segmentation.objects_config import ObjectsConfig
 from coco import CocoDataset
 
 
-Config = BaseConfig
+Config = ObjectsConfig
 
 class Dataset(CocoDataset):
     """Generates the objects synthetic dataset. The dataset consists of simple
@@ -44,8 +40,7 @@ class Dataset(CocoDataset):
         return_coco: If True, returns the COCO object.
         """
         # Path
-        image_dir = os.path.join(dataset_dir, "train2014" if subset == "train"
-                                 else "val2014")
+        image_dir = os.path.join(dataset_dir, "train2014" if subset == "train" else "val2014")
 
         # Create COCO object
         json_path_dict = {
@@ -123,11 +118,3 @@ class Dataset(CocoDataset):
         else:
             # Call super class to return an empty mask
             return super(self.__class__).load_mask(image_id)
-
-    def image_reference(self, image_id):
-        """Return a link to the image in the COCO Website."""
-        info = self.image_info[image_id]
-        if info["source"] == "objects":
-            return "http://cocodataset.org/#explore?id={}".format(info["id"])
-        else:
-            super(self.__class__).image_reference(self, image_id)

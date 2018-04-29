@@ -21,10 +21,13 @@ from collections import OrderedDict
 import numpy as np
 import scipy.misc
 import tensorflow as tf
+import cv2
+import imgaug as ia
+from imgaug import augmenters as iaa
 
 # Limit the resource usage for tensorflow backend
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.6
+config.gpu_options.per_process_gpu_memory_fraction = 1
 tf_session = tf.Session(config=config)
 from keras.backend.tensorflow_backend import set_session
 set_session(tf_session)
@@ -43,6 +46,16 @@ from distutils.version import LooseVersion
 assert LooseVersion(tf.__version__) >= LooseVersion("1.3")
 assert LooseVersion(keras.__version__) >= LooseVersion('2.0.8')
 
+
+affine_transform = iaa.Affine(
+    scale={"x": (1, 1.2), "y": (1, 1.2)},
+    rotate=(-20, 20),
+    shear=(-10, 10),
+    order=[0, 1], # use nearest neighbour or bilinear interpolation (fast)
+    cval=(0, 0), # if mode is constant, use a cval between 0 and 255
+    mode="constant" # use any of scikit-image's warping modes (see 2nd image from the top for examples)
+)
+blur = iaa.GaussianBlur((0, 1.5)) # blur images with a sigma between 0 and 2
 
 ############################################################
 #  Utility Functions
@@ -1205,11 +1218,61 @@ def load_image_gt(dataset, config, image_id, augment=False,
         padding=config.IMAGE_PADDING)
     mask = utils.resize_mask(mask, scale, padding)
 
-    # Random horizontal flips.
+    image_shape = image.shape
+    mask_shape = mask.shape
+
     if augment:
+        img = image[:, :, 0: 3]
+
+        # Random flips
         if random.randint(0, 1):
             image = np.fliplr(image)
             mask = np.fliplr(mask)
+
+        # Random color shifts
+        off = 20
+        off_r = random.randint(-off, off)
+        off_g = random.randint(-off, off)
+        off_b = random.randint(-off, off)
+        img = np.dstack((
+            img[:, :, 0] + off_r,
+            img[:, :, 1] + off_g,
+            img[:, :, 2] + off_b))
+
+        # Gaussian noise
+        if random.randint(0, 1):
+            img = skimage.util.random_noise(img / 255, var=random.uniform(0, 0.005)) * 255
+        if config.MODE == "RGB":
+            image = img
+        elif config.MODE == "RGBD":
+            depth = image[:, :, 3]
+            if random.randint(0, 1): # add noise to depth independend of depth on rgb
+                depth = skimage.util.random_noise(depth / 255, var=random.uniform(0, 0.005)) * 255
+            image = np.dstack((img, depth))
+
+        # affine transform
+        if random.randint(0, 1):
+            affine = affine_transform.to_deterministic()
+            image = affine.augment_image(image)
+            if mask.shape[2]:
+                mask = affine.augment_image(mask.astype(np.uint8))
+                # Change mask back to bool
+                mask = mask.astype(np.bool)
+            # Verify that shapes didn't change
+            assert image.shape == image_shape, "Augmentation shouldn't change image size {} -> {}".format(image_shape, image.shape)
+            assert mask.shape == mask_shape, "Augmentation shouldn't change mask size {} -> {}".format(mask_shape, mask.shape)
+        # blur
+        if random.randint(0, 1):
+            if config.MODE == "RGBD":
+                img = image[:, :, 0:3]
+                depth = image[:, :, 3]
+                img = blur.augment_image(img)
+                depth = blur.augment_image(depth)
+                image = np.dstack((img, depth))
+            else:
+                image = blur.augment_image(image)
+
+        image = np.clip(image, 255)
 
     # Note that some boxes might be all zeros if the corresponding mask got cropped out.
     # and here is to filter them out

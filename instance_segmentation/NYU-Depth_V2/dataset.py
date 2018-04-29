@@ -1,6 +1,13 @@
+"""
+checkout toolbox at https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
+to understand how labels are loded
+"""
+
 import os, sys
 import numpy as np
 import cv2
+import skimage.io
+import random
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../..")
@@ -12,46 +19,58 @@ from instance_segmentation.objects_dataset import ObjectsDataset, normalize
 from data.names import names
 
 
+BINARY_CLASS = True
+# BINARY_CLASS = False
+if BINARY_CLASS:
+    NAME = "NYU_Depth_V2_coco"
+else:
+    NAME = "NYU_Depth_V2_coco_classes"
+
+EXCLUDE = ['floor', 'wall', 'ceiling'] # exclude stuff (include only well-localized objects)
+
 class Config(ObjectsConfig):
-    NAME = "NYU_Depth_V2_sceneNet"
+    NAME = NAME
 
     MODE = 'RGBD'
+    # MODE = 'RGB'
     BACKBONE = 'resnet50'
     # BACKBONE = 'resnet101'
 
-    # IMAGE_MIN_DIM = 448
-    # IMAGE_MAX_DIM = 448
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 640
 
     IMAGES_PER_GPU = 1
     LEARNING_RATE = 0.001
-    # USE_MINI_MASK = False
 
-    # NUM_CLASSES = 1 + 1
-
-    # STEPS_PER_EPOCH = 10
-    
     # Image mean (RGBD)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2]) # 1220.7 / 1000, 255.0 / 100])
+    # MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2]) # 1220.7 / 1000, 255.0 / 100])
+
+    def __init__(self):
+        super().__init__()
+        if not BINARY_CLASS:
+            self.NUM_CLASSES = len(names) + 1 - len(EXCLUDE)
 
 
 class Dataset(ObjectsDataset):
-    EXCLUDE = ['floor', 'wall', 'ceiling'] # stuff
-    # EXCLUDE = [] # stuff
+    WIDTH = 640
+    HEIGHT = 480
 
     def load(self, dataset_dir, subset, skip=0):
+        self.subset = subset
         assert(subset == 'training' or subset == 'validation')
 
         dataset_dir = os.path.join(dataset_dir, subset)
 
-        for idx, name in enumerate(names):
-            self.add_class("NYU_Depth_V2_sceneNet", idx + 1, name)
-
-        # self.add_class("NYU_Depth_V2_sceneNet", 1, 'object')
+        if BINARY_CLASS:
+            self.add_class(NAME, 1, 'object')
+        else:
+            for idx, name in enumerate(names):
+                self.add_class(NAME, idx + 1, name)
 
         count = 0
         exclude = set(['depths', 'instances', 'labels'])
         # Add images
-        for i, (root, dirs, files) in enumerate(os.walk(dataset_dir, topdown=True)):
+        for root, dirs, files in os.walk(dataset_dir, topdown=True):
             dirs[:] = [d for d in dirs if d not in exclude]
             root_split = root.split('/')
             if root_split[-1] == 'images':
@@ -63,39 +82,33 @@ class Dataset(ObjectsDataset):
                         instances_path = os.path.join(parent_path, 'instances', file)
                         labels_path = os.path.join(parent_path, 'labels', file)
                         path = os.path.join(root, file)
-                        width, height = (640, 480)
                         self.add_image(
-                            "NYU_Depth_V2_sceneNet",
-                            image_id=i,
+                            NAME,
+                            image_id=count,
                             path=path,
                             depth_path=depth_path,
                             instances_path=instances_path,
                             labels_path=labels_path,
                             parent_path=parent_path,
-                            width=width,
-                            height=height)
+                            width=self.WIDTH,
+                            height=self.HEIGHT)
                         count += 1
         print('added {} images for {}'.format(count, subset))
 
-    def load_image(self, image_id, mode="RGBD", canny_args=(100, 200)):
+    def load_image(self, image_id, mode="RGBD"):
         if self.use_generated:
             parent_path = self.image_info[image_id]['parent_path']
             file_name = self.image_info[image_id]['file_name']
             return np.load(os.path.join(parent_path, img_path, file_name + ".npy"))
         image = np.load(self.image_info[image_id]['path']).T
-        if mode == "RGBDE":
-            depth = np.load(self.image_info[image_id]['depth_path']).T
-            depth = normalize(depth)
-            edges = cv2.Canny(np.uint8(image), *canny_args)
-            rgbde = np.dstack((image, depth, edges))
-            return rgbde
-        elif mode == "RGBD":
+        if mode == "RGBD":
             depth = np.load(self.image_info[image_id]['depth_path']).T
             depth = normalize(depth)
             rgbd = np.dstack((image, depth))
-            return rgbd
+            ret = rgbd
         else:
-            return image
+            ret = image
+        return ret
 
     def to_mask(inst_img, labels_img, label, instance):
         return np.bitwise_and(inst_img == instance, labels_img == label)
@@ -129,21 +142,12 @@ class Dataset(ObjectsDataset):
             x = labels.index(0)
             del labels[x]
             del instances[x]
-        # if 0 in instances:
-        #     x = instances.index(0)
-        #     del labels[x]
-        #     del instances[x]
-        for excl in self.EXCLUDE:
+        for excl in EXCLUDE:
             idx = names.index(excl) + 1
-            if idx in labels:
+            while idx in labels:
                 x = labels.index(idx)
                 del labels[x]
                 del instances[x]
-                print("rm {}".format(excl))
-            # if idx in instances:
-            #     x = instances.index(idx)
-            #     del labels[x]
-            #     del instances[x]
 
         unique_instances = np.stack((labels, instances))
 
@@ -154,8 +158,10 @@ class Dataset(ObjectsDataset):
         if not n_instances:
             raise ValueError("No instances for image {}".format(mask_path))
 
-        class_ids = np.array(unique_instances[0], dtype=np.int32)
-        # class_ids = np.array([1] * n_instances, dtype=np.int32)
+        if BINARY_CLASS:
+            class_ids = np.array([1] * n_instances, dtype=np.int32)
+        else:
+            class_ids = np.array(unique_instances[0], dtype=np.int32)
 
         return masks, class_ids
 

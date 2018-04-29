@@ -25,6 +25,7 @@ class Config(object):
     # experiment is running.
     NAME = None  # Override in sub-classes
 
+    # representing channels (depth) of input data
     MODE = 'RGB'
 
     # NUMBER OF GPUs to use. For CPU training, use 1

@@ -14,25 +14,40 @@ from instance_segmentation.objects_config import ObjectsConfig
 from instance_segmentation.objects_dataset import ObjectsDataset
 
 
-class Config(ObjectsConfig):
-    NAME = "seg_sceneNet"
+BINARY_CLASS = True
+# BINARY_CLASS = False
+if BINARY_CLASS:
+    NAME = "sceneNet_coco_rgb"
+else:
+    NAME = "sceneNet_coco_rgb_classes"
 
-    MODE = 'RGBD'
+EXCLUDE = [3, 5, 12] # stuff (Ceiling, Floor, Wall)
+
+class Config(ObjectsConfig):
+    NAME = NAME
+
+    # MODE = 'RGBD'
+    MODE = 'RGB'
     BACKBONE = 'resnet50'
+    # BACKBONE = 'resnet101'
 
     IMAGE_MIN_DIM = 256
     IMAGE_MAX_DIM = 320
 
     IMAGES_PER_GPU = 1
     LEARNING_RATE = 0.001
-    STEPS_PER_EPOCH = 4000
+    STEPS_PER_EPOCH = 2000
+    VALIDATION_STEPS = 100
 
-    # USE_MINI_MASK = False
+    # NUM_CLASSES = 80 + 1
 
-    # STEPS_PER_EPOCH = 10
-    
     # Image mean (RGBD)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255.0 / 2]) # , 255.0 / 100])
+    # MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255.0 / 2]) # , 255.0 / 100])
+
+    def __init__(self):
+        super().__init__()
+        if not BINARY_CLASS:
+            self.NUM_CLASSES = 14 + 1 - len(EXCLUDE)
 
 class Dataset(ObjectsDataset):
     CLASSES = [ (0,'Unknown'),
@@ -49,28 +64,30 @@ class Dataset(ObjectsDataset):
                 (11,'TV'),
                 (12,'Wall'),
                 (13,'Window')]
-    EXCLUDE = [3, 5, 12] # stuff (Ceiling, Floor, Wall)
+
+    WIDTH = 320
+    HEIGHT = 240
 
     def load(self, subset, skip=0):
         self.subset = subset
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
 
         # Add classes
-        # for cls in self.CLASSES:
-        #     self.add_class("seg_sceneNet", cls[0], cls[1])
-        # for i in range(1000):
-        #     self.add_class("seg_sceneNet", i, str(i))
+        if BINARY_CLASS:
+            self.add_class(NAME, 1, 'object')
+        else:
+            for cls in self.CLASSES:
+                self.add_class(NAME, cls[0] + 1, cls[1])
 
-        self.add_class("seg_sceneNet", 1, 'object')
         l = []
         with open(subset + '.pkl', 'rb') as file:
             l = pickle.load(file)
         print("Pickle file loaded.")
 
         count = 0
-        exclude = set(['depth', 'instance'])
         # Add images
         for i, info in enumerate(l):
+            info["source"] = NAME
             if i % (skip + 1) == 0:
                 self.add_image(**info)
                 count += 1
@@ -87,30 +104,27 @@ class Dataset(ObjectsDataset):
         count = 0
         exclude = set(['depth', 'instance'])
         # Add images
-        for i, (root, dirs, files) in enumerate(os.walk(dataset_dir, topdown=True)):
+        for root, dirs, files in os.walk(dataset_dir, topdown=True):
             dirs[:] = [d for d in dirs if d not in exclude]
             root_split = root.split('/')
             if root_split[-1] == 'photo': # and subset in root_split:
                 print('Loading {} data from {}, {}'.format(subset, root_split[-3], root_split[-2]))
-                for j, file in enumerate(files):
+                files.sort(key=lambda f: int(f[:-4]))
+                for file in files:
                     parent_path = '/'.join(root.split('/')[:-1])
-                    depth_path = os.path.join(parent_path, 'depth', file[:-4] + '.png')
-                    mask_path = os.path.join(parent_path, 'instance', file[:-4] + '.png')
+                    file_name = file[:-4]
+                    depth_path = os.path.join(parent_path, 'depth', file_name + '.png')
+                    mask_path = os.path.join(parent_path, 'instance', file_name + '.png')
                     path = os.path.join(root, file)
-#                         im = Image.open(path)
-#                         width, height = im.size
-                    width, height = (320, 240)
                     l.append({
-                        "source": "seg_sceneNet",
-                        "image_id": i,
+                        "source": NAME,
+                        "image_id": count,
                         "path": path,
                         "depth_path": depth_path,
                         "mask_path": mask_path,
-                        "parent_path": parent_path,
                         "render_path": '/'.join(root_split[-3:-1]),
-                        "file_name": file[:-4],
-                        "width": width,
-                        "height": height})
+                        "width": self.WIDTH,
+                        "height": self.HEIGHT})
                     count += 1
         print('Added {} images for {}'.format(count, subset))
         with open(subset + '.pkl', 'wb') as file:
@@ -138,19 +152,17 @@ class Dataset(ObjectsDataset):
         n_instances = len(instances)
         masks = np.repeat(np.expand_dims(mask_img, axis=2), n_instances, axis=2) # bottleneck code
         masks = self.to_mask_v(masks, instances)
-        # if not n_instances:
-        #     raise ValueError("No instances for image {}".format(mask_path))
 
-        class_ids = np.array([1] * n_instances, dtype=np.int32)
-        # class_ids = np.array(instances, dtype=np.int32)
+        if BINARY_CLASS:
+            class_ids = np.array([1] * n_instances, dtype=np.int32)
+        else:
+            class_ids = np.array([instance_to_class[x] + 1 for x in instances], dtype=np.uint32)
 
         return masks, class_ids
 
 if __name__ == '__main__':
     dataset = Dataset()
-    # dataset.save_dataset_config('/external_datasets/SceneNet_RGBD', 'validation')
+    dataset.save_dataset_config('/external_datasets/SceneNet_RGBD', 'validation')
     dataset.save_dataset_config('/external_datasets/SceneNet_RGBD', 'training')
-    # dataset.load('validation', 100)
-    # dataset.load_mask(2)
 
 

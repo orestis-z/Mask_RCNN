@@ -18,6 +18,8 @@ import skimage.color
 import skimage.io
 import urllib.request
 import shutil
+import time
+
 
 # URL from which to download the latest COCO trained weights
 COCO_MODEL_URL = "https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5"
@@ -352,7 +354,7 @@ class Dataset(object):
         """
         return self.image_info[image_id]["path"]
 
-    def load_image(self, image_id, depth=False):
+    def load_image(self, image_id, mode="RGB"):
         """Load the specified image and return a [H,W,3] Numpy array.
         """
         # Load image
@@ -735,3 +737,15 @@ def download_trained_weights(coco_model_path, verbose=1):
         shutil.copyfileobj(resp, out)
     if verbose > 0:
         print("... done downloading pretrained model!")
+
+class Timer(object):
+    def __init__(self, name=None):
+        self.name = name
+
+    def __enter__(self):
+        self.tstart = time.time()
+
+    def __exit__(self, type, value, traceback):
+        if self.name:
+            print('[%s]' % self.name)
+        print('Elapsed: %s' % (time.time() - self.tstart))

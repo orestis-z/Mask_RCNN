@@ -13,8 +13,10 @@ from instance_segmentation.objects_config import ObjectsConfig
 from instance_segmentation.objects_dataset import ObjectsDataset
 
 
+NAME = "ADE20K"
+
 class Config(ObjectsConfig):
-    NAME = "seg_ADE20K"
+    NAME = NAME
 
 class Dataset(ObjectsDataset):
     def load(self, dataset_dir, subset):
@@ -25,7 +27,7 @@ class Dataset(ObjectsDataset):
         image_ids = range(len(index['folder'][0][0][0]))
 
         # Add classes
-        self.add_class("seg_ADE20K", 1, "object")
+        self.add_class(NAME, 1, "object")
 
         # Add images
         folders = index['folder'][0][0][0]
@@ -37,7 +39,7 @@ class Dataset(ObjectsDataset):
                 im = Image.open(path)
                 width, height = im.size
                 self.add_image(
-                    "seg_ADE20K",
+                    NAME,
                     image_id=i,
                     path=path,
                     width=width,

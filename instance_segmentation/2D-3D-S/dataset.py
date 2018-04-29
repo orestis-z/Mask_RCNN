@@ -1,9 +1,7 @@
 import os, sys
-import math
 import numpy as np
 import skimage.io
 import cv2
-from PIL import Image
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../..")
@@ -13,22 +11,11 @@ if ROOT_DIR not in sys.path:
 from instance_segmentation.objects_config import ObjectsConfig
 from instance_segmentation.objects_dataset import ObjectsDataset, normalize
 
-import time
 
-class Timer(object):
-    def __init__(self, name=None):
-        self.name = name
-
-    def __enter__(self):
-        self.tstart = time.time()
-
-    def __exit__(self, type, value, traceback):
-        if self.name:
-            print('[%s]' % self.name)
-        print('Elapsed: %s' % (time.time() - self.tstart))
+NAME = "2D_3D_S"
 
 class Config(ObjectsConfig):
-    NAME = "2D_3D_S"
+    NAME = NAME
 
     MODE = 'RGBD'
     BACKBONE = 'resnet50'
@@ -40,42 +27,44 @@ class Config(ObjectsConfig):
     LEARNING_RATE = 0.002
 
     # Image mean (RGBD)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2])
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 127.5])
 
 class Dataset(ObjectsDataset):
+    WIDTH = 1080
+    HEIGHT = 1080
+
     def load(self, dataset_dir, subset, skip=0):
         assert(subset == 'training' or subset == 'validation' or subset == 'testing')
         dataset_dir = os.path.join(dataset_dir, subset)
 
-        # Add classes
-        self.add_class("2D-3D-S", 1, "object")
+        # Add binary class
+        self.add_class(NAME, 1, "object")
 
         count = 0
         exclude = set(['3d', 'pano', 'raw', 'sensor', 'semantic_pretty', 'normal', 'pose', 'depth', 'semantic'])
         # Add images
-        for i, (root, dirs, files) in enumerate(os.walk(dataset_dir, topdown=True)):
+        for root, dirs, files in os.walk(dataset_dir, topdown=True):
             dirs[:] = [d for d in dirs if d not in exclude]
             root_split = root.split('/')
             if root_split[-2] == 'data' and root_split[-1] == 'rgb': # and subset in root_split:
                 print(root_split[-3])
                 for j, file in enumerate(files):
                     if file[-4:] == '.png' and j % (skip + 1) == 0:
-                        parentRoot = '/'.join(root.split('/')[:-1])
-                        depth_path = os.path.join(parentRoot, 'depth', file[:-7] + 'depth.png')
-                        mask_path = os.path.join(parentRoot, 'semantic', file[:-7] + 'semantic.png')
+                        parent = '/'.join(root.split('/')[:-1])
+                        file_name = file[:-7]
+                        depth_path = os.path.join(parent, 'depth', file_name + 'depth.png')
+                        mask_path = os.path.join(parent, 'semantic', file_name + 'semantic.png')
                         # only add if corresponding mask exists
                         path = os.path.join(root, file)
                         if os.path.isfile(depth_path) and os.path.isfile(mask_path):
-                            # if (os.stat(path).st_size):
-                            width, height = (1080, 1080)
                             self.add_image(
-                                "2D-3D-S",
-                                image_id=i,
+                                NAME,
+                                image_id=count,
                                 path=path,
                                 depth_path=depth_path,
                                 mask_path=mask_path,
-                                width=width,
-                                height=height)
+                                width=self.WIDTH,
+                                height=self.HEIGHT)
                             count += 1
                         else:
                             print('Warning: No depth or mask found for ' + path)
@@ -88,7 +77,7 @@ class Dataset(ObjectsDataset):
         image = super(Dataset, self).load_image(image_id)
         if mode == "RGBD":
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
-            depth = normalize(np.clip(depth, 0, 5500))
+            depth = normalize(np.clip(depth, 0, 5500)) # clip depth to max 5.5m
             rgbd = np.dstack((image, depth))
             return rgbd
         else:
@@ -97,6 +86,7 @@ class Dataset(ObjectsDataset):
     def to_mask(img, instance):
         return (img == instance).astype(np.uint8)
 
+    # vectorize since this was slow in serial execution
     to_mask_v = np.vectorize(to_mask, signature='(n,m),(k)->(n,m)')
 
     def load_mask(self, image_id):
@@ -110,6 +100,7 @@ class Dataset(ObjectsDataset):
         mask_path = self.image_info[image_id]['mask_path']
         img = cv2.imread(mask_path, -1)
 
+        # https://github.com/alexsax/2D-3D-Semantics/blob/master/assets/utils.py
         R = img[:, :, 0]
         G = img[:, :, 1]
         B = img[:, :, 2]
@@ -117,7 +108,7 @@ class Dataset(ObjectsDataset):
         img = R * 256 * 256 + G * 256 + B
 
         instances = np.unique(img.flatten())
-        instances = instances.tolist()
+        # instances = instances.tolist()
         # if 0 in instances:
         #     instances.remove(0)
         n_instances = len(instances)

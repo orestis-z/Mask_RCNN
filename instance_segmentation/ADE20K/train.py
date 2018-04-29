@@ -1,5 +1,4 @@
 import os, sys
-import tensorflow as tf
 
 from dataset import *
 
@@ -9,7 +8,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 import model as modellib
-from model import log
+
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
@@ -34,9 +33,7 @@ dataset_val.prepare()
 
 # Create model in training mode
 print('creating model..')
-DEVICE = "/gpu:0"  # /cpu:0 or /gpu:0
-with tf.device(DEVICE):
-    model = modellib.MaskRCNN(mode="training", config=config,
+model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
 # Which weights to start with?
@@ -56,12 +53,7 @@ elif init_with == "last":
     # Load the last model you trained and continue training
     model.load_weights(model.find_last()[1], by_name=True)
 
-# ## Training
-# 
-# Train in two stages:
-# 1. Only the heads. Here we're freezing all the backbone layers and training only the randomly initialized layers (i.e. the ones that we didn't use pre-trained weights from MS COCO). To train only the head layers, pass `layers='heads'` to the `train()` function.
-# 
-# 2. Fine-tune all layers. For this simple example it's not necessary, but we're including it to show the process. Simply pass `layers="all` to train all layers.
+## Training
 
 # Train the head branches
 print('training heads...')
@@ -74,5 +66,5 @@ model.train(dataset_train, dataset_val,
 # print('fine tuning all layers...')
 # model.train(dataset_train, dataset_val, 
 #             learning_rate=config.LEARNING_RATE,
-#             epochs=j + 1, 
+#             epochs=200, 
 #             layers="all")
