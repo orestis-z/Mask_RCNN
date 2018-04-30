@@ -20,14 +20,16 @@ instance_path = 'generated/instance'
 def normalize(img):
     img_min = np.min(img)
     img_max = np.max(img)
-    return (img - img_min) / (img_max - img_min) * 255
+    if img_min == img_max:
+        return np.ones(img.shape) * 127.5
+    return np.clip((img - img_min) / (img_max - img_min), 0, 1) * 255
 
 class ObjectsDataset(Dataset):
     def __init__(self, use_generated=False):
         super().__init__()
         self.use_generated = use_generated
 
-    def load_image(self, image_id, mode="RGBD"):
+    def load_image(self, image_id, mode="RGB"):
         if self.use_generated:
             parent_path = self.image_info[image_id]['parent_path']
             file_name = self.image_info[image_id]['file_name']

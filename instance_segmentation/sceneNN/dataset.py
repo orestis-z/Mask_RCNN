@@ -61,8 +61,8 @@ class Dataset(utils.Dataset):
                                     path=path,
                                     depth_path=depth_path,
                                     mask_path=mask_path,
-                                    width=width,
-                                    height=height)
+                                    width=self.WIDTH,
+                                    height=self.HEIGHT)
                                 count += 1
                         else:
                             print('Warning: No depth or mask found for ' + path)

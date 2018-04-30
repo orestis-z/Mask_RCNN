@@ -1217,7 +1217,6 @@ def load_image_gt(dataset, config, image_id, augment=False,
         max_dim=config.IMAGE_MAX_DIM,
         padding=config.IMAGE_PADDING)
     mask = utils.resize_mask(mask, scale, padding)
-
     image_shape = image.shape
     mask_shape = mask.shape
 

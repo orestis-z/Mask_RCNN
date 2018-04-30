@@ -418,16 +418,10 @@ def resize_image(image, min_dim=None, max_dim=None, padding=False):
             scale = max_dim / image_max
     # Resize image and mask
     if scale != 1:
-        # image = scipy.misc.imresize(
-            # image, (round(h * scale), round(w * scale)))
+#         image = scipy.misc.imresize(
+#             image, (round(h * scale), round(w * scale)))
         image = scipy.ndimage.zoom(image, [scale, scale, 1])
-        if image.shape[2] > 3: # if RGBD
-            depth_max = np.max(image[:, :, 3])
-            depth = np.clip(image[:, :, 3], 0, depth_max)
-            image = np.clip(image[:, :, 0:3], 0, 255)
-            image = np.dstack((image, depth))
-        else:
-            image = np.clip(image, 0, 255)
+        image = np.clip(image, 0, 255)
     # Need padding?
     if padding:
         # Get new height and width

@@ -74,10 +74,10 @@ class Dataset(ObjectsDataset):
         """Load the specified image and return a [H,W,3+1] Numpy array.
         """
         # Load image & depth
-        image = super(Dataset, self).load_image(image_id)
+        image = super(Dataset, self).load_image(image_id, mode="RGB")
         if mode == "RGBD":
             depth = skimage.io.imread(self.image_info[image_id]['depth_path'])
-            depth = normalize(np.clip(depth, 0, 5500)) # clip depth to max 5.5m
+            depth = normalize(np.clip(depth, 0, 5000)) # clip depth to max 5m
             rgbd = np.dstack((image, depth))
             return rgbd
         else:
