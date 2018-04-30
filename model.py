@@ -22,6 +22,7 @@ import numpy as np
 import scipy.misc
 import tensorflow as tf
 import cv2
+import skimage
 import imgaug as ia
 from imgaug import augmenters as iaa
 
@@ -1221,22 +1222,21 @@ def load_image_gt(dataset, config, image_id, augment=False,
     mask_shape = mask.shape
 
     if augment:
-        img = image[:, :, 0: 3]
-
         # Random flips
         if random.randint(0, 1):
             image = np.fliplr(image)
             mask = np.fliplr(mask)
+        img = image[:, :, 0: 3]
 
         # Random color shifts
         off = 20
         off_r = random.randint(-off, off)
         off_g = random.randint(-off, off)
         off_b = random.randint(-off, off)
-        img = np.dstack((
+        img = np.clip(np.dstack((
             img[:, :, 0] + off_r,
             img[:, :, 1] + off_g,
-            img[:, :, 2] + off_b))
+            img[:, :, 2] + off_b)), 0, 255)
 
         # Gaussian noise
         if random.randint(0, 1):
@@ -1271,7 +1271,7 @@ def load_image_gt(dataset, config, image_id, augment=False,
             else:
                 image = blur.augment_image(image)
 
-        image = np.clip(image, 255)
+        image = np.clip(image, 0, 255)
 
     # Note that some boxes might be all zeros if the corresponding mask got cropped out.
     # and here is to filter them out
