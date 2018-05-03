@@ -15,7 +15,7 @@ MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
 # Path to COCO trained weights
 SCENENN_MODEL_PATH = os.path.join(ROOT_DIR, "logs/mask_rcnn_seg_scenenn_0101.h5")
-SCENENET_MODEL_PATH = os.path.join(MODEL_DIR, "seg_scenenet20171121T1912/mask_rcnn_seg_scenenet_0692.h5")
+SCENENET_MODEL_PATH = os.path.join(MODEL_DIR, "scenenet_coco_rgb20180428T1942/mask_rcnn_scenenet_coco_rgb_0485.h5")
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 MODEL_PATH = COCO_MODEL_PATH
 
@@ -37,10 +37,11 @@ print('creating model..')
 model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
-exclude = ["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"]
+# exclude = ["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"]
+exclude = []
 
 # # Which weights to start with?
-init_with = "coco"  # scenenn, last, imagenet
+init_with = "sceneNet"  # scenenn, last, imagenet
 
 print('loading {} weights...'.format(init_with))
 if init_with == "last":
@@ -102,5 +103,5 @@ model.train(dataset_train, dataset_val,
 print('tuning all layers...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE,
-            epochs=1000,
+            epochs=500,
             layers="all")

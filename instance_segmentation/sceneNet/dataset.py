@@ -148,7 +148,7 @@ class Dataset(ObjectsDataset):
         instances = instances.tolist()
         if 0 in instances:
             instances.remove(0)
-        instances = [x for x in instances if instance_to_class[x] not in self.EXCLUDE]
+        instances = [x for x in instances if instance_to_class[x] not in EXCLUDE]
         n_instances = len(instances)
         masks = np.repeat(np.expand_dims(mask_img, axis=2), n_instances, axis=2) # bottleneck code
         masks = self.to_mask_v(masks, instances)
