@@ -22,9 +22,9 @@ from data.names import names
 BINARY_CLASS = True
 # BINARY_CLASS = False
 if BINARY_CLASS:
-    NAME = "NYU_Depth_V2_coco"
+    NAME = "NYU_Depth_V2_scenenet_rgb_all_layers_2"
 else:
-    NAME = "NYU_Depth_V2_coco_classes"
+    NAME = "NYU_Depth_V2_scenenet_rgb_all_layers_2_classes"
 
 EXCLUDE = ['floor', 'wall', 'ceiling'] # exclude stuff (include only well-localized objects)
 
@@ -43,7 +43,7 @@ class Config(ObjectsConfig):
     LEARNING_RATE = 0.001
 
     # Image mean (RGBD)
-    # MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2]) # 1220.7 / 1000, 255.0 / 100])
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2]) # 1220.7 / 1000, 255.0 / 100])
 
     def __init__(self):
         super().__init__()

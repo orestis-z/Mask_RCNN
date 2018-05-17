@@ -14,20 +14,20 @@ from instance_segmentation.objects_config import ObjectsConfig
 from instance_segmentation.objects_dataset import ObjectsDataset
 
 
-BINARY_CLASS = True
-# BINARY_CLASS = False
+# BINARY_CLASS = True
+BINARY_CLASS = False
 if BINARY_CLASS:
-    NAME = "sceneNet_coco_rgb"
+    NAME = "sceneNet"
 else:
-    NAME = "sceneNet_coco_rgb_classes"
+    NAME = "sceneNet_classes"
 
-EXCLUDE = [3, 5, 12] # stuff (Ceiling, Floor, Wall)
+EXCLUDE = [3, 5, 12] # stuf f (Ceiling, Floor, Wall)
 
 class Config(ObjectsConfig):
     NAME = NAME
 
     # MODE = 'RGBD'
-    MODE = 'RGB'
+    # MODE = 'RGB'
     BACKBONE = 'resnet50'
     # BACKBONE = 'resnet101'
 
@@ -47,7 +47,7 @@ class Config(ObjectsConfig):
     def __init__(self):
         super().__init__()
         if not BINARY_CLASS:
-            self.NUM_CLASSES = 14 + 1 - len(EXCLUDE)
+            self.NUM_CLASSES = 14 + 1 # - len(EXCLUDE)
 
 class Dataset(ObjectsDataset):
     CLASSES = [ (0,'Unknown'),
@@ -77,7 +77,8 @@ class Dataset(ObjectsDataset):
             self.add_class(NAME, 1, 'object')
         else:
             for cls in self.CLASSES:
-                self.add_class(NAME, cls[0] + 1, cls[1])
+                if cls not in EXCLUDE:
+                    self.add_class(NAME, cls[0] + 1, cls[1])
 
         l = []
         with open(subset + '.pkl', 'rb') as file:

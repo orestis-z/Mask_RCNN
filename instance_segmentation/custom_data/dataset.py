@@ -55,7 +55,7 @@ class Dataset(ObjectsDataset):
         ret = super().load_image(image_id, mode)
         if mode == "RGBD":
             depth_raw = ret[:, :, 3]
-            mask = (depth_raw == 255).astype(np.uint8)
+            mask = (depth_raw == 0).astype(np.uint8)
 
             if PROCESS_DEPTH == "inpaint":
                 depth = cv2.inpaint(depth_raw.astype(np.uint8), mask, 3, cv2.INPAINT_NS)

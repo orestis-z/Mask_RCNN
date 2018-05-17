@@ -22,9 +22,9 @@ import numpy as np
 import scipy.misc
 import tensorflow as tf
 import cv2
+import skimage
 import imgaug as ia
 from imgaug import augmenters as iaa
-import skimage
 
 
 # Limit the resource usage for tensorflow backend
@@ -1227,7 +1227,7 @@ def load_image_gt(dataset, config, image_id, augment=False,
         if random.randint(0, 1):
             image = np.fliplr(image)
             mask = np.fliplr(mask)
-        
+
         img = image[:, :, 0: 3]
 
         # Random color shifts
@@ -1235,10 +1235,10 @@ def load_image_gt(dataset, config, image_id, augment=False,
         off_r = random.randint(-off, off)
         off_g = random.randint(-off, off)
         off_b = random.randint(-off, off)
-        img = np.dstack((
+        img = np.clip(np.dstack((
             img[:, :, 0] + off_r,
             img[:, :, 1] + off_g,
-            img[:, :, 2] + off_b))
+            img[:, :, 2] + off_b)), 0, 255)
 
         # Gaussian noise
         if random.randint(0, 1):
@@ -1247,7 +1247,7 @@ def load_image_gt(dataset, config, image_id, augment=False,
             image = img
         elif config.MODE == "RGBD":
             depth = image[:, :, 3]
-            if random.randint(0, 1): # add noise to depth independend of depth on rgb
+            if random.randint(0, 1): # add noise to depth independend of noise on rgb
                 depth = skimage.util.random_noise(depth / 255, var=random.uniform(0, 0.005)) * 255
             image = np.dstack((img, depth))
 
@@ -1263,15 +1263,16 @@ def load_image_gt(dataset, config, image_id, augment=False,
             assert image.shape == image_shape, "Augmentation shouldn't change image size {} -> {}".format(image_shape, image.shape)
             assert mask.shape == mask_shape, "Augmentation shouldn't change mask size {} -> {}".format(mask_shape, mask.shape)
         # blur
+        img = image[:, :, 0:3]
         if random.randint(0, 1):
-            if config.MODE == "RGBD":
-                img = image[:, :, 0:3]
-                depth = image[:, :, 3]
-                img = blur.augment_image(img)
+            img = blur.augment_image(img)
+        if config.MODE == "RGB":
+            image = img
+        if config.MODE == "RGBD":
+            depth = image[:, :, 3]
+            if random.randint(0, 1): # blur depth independend of rgb blur
                 depth = blur.augment_image(depth)
-                image = np.dstack((img, depth))
-            else:
-                image = blur.augment_image(image)
+            image = np.dstack((img, depth))
 
         image = np.clip(image, 0, 255)
 

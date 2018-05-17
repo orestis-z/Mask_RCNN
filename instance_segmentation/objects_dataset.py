@@ -21,6 +21,8 @@ def normalize(img):
     img_min = np.min(img)
     img_max = np.max(img)
     if img_min == img_max:
+        if img_max == 0:
+            return img
         return np.ones(img.shape) * 127.5
     return np.clip((img - img_min) / (img_max - img_min), 0, 1) * 255
 

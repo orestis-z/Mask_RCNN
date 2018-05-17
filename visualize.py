@@ -96,7 +96,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
 
     # Generate random colors
     if colors is None:
-        colors = random_colors(N)
+        colors = random_colors(N, False)
 
     # Show area outside image boundaries.
     height, width = image.shape[:2]
@@ -109,9 +109,10 @@ def display_instances(image, boxes, masks, class_ids, class_names,
     for i in range(N):
         class_id = class_ids[i]
         # if colors is not None:
-        # color = colors[class_id - 1]
+        #     color = colors[class_id - 1]
         # else:
         color = colors[i]
+        # color = (1, 1, 1)
 
         # Bounding box
         if not np.any(boxes[i]):
@@ -119,23 +120,25 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             continue
         y1, x1, y2, x2 = boxes[i]
         
-        if len(boxes):
-            p = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=2,
-                              alpha=0.7, linestyle="dashed",
-                              edgecolor=color, facecolor='none')
-            ax.add_patch(p)
+        # if len(boxes):
+        #     p = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=2,
+        #                       alpha=0.7, linestyle="dashed",
+        #                       edgecolor=color, facecolor='none')
+        #     ax.add_patch(p)
 
         # Label
         score = scores[i] if scores is not None else None
         label = class_names[class_id]
         x = random.randint(x1, (x1 + x2) // 2)
-        caption = "{} {:.3f}".format(label, score) if score else label
-        ax.text(x1, y1 + 8, caption,
-                color='w', size=11, backgroundcolor="none")
+        # caption = "{} {:.3f}".format(label, score) if score else label
+        # caption = label
+        # ax.text(x1, y1 + 8, caption,
+        #         color='black', size=11,
+        #     bbox=dict(boxstyle='square,pad=0.2', fc='white', ec='black'))
 
         # Mask
         mask = masks[:, :, i]
-        masked_image = apply_mask(masked_image, mask, color)
+        masked_image = apply_mask(masked_image, mask, color, 0.3)
 
         # Mask Polygon
         # Pad to ensure proper polygons for masks that touch image edges.
@@ -146,12 +149,12 @@ def display_instances(image, boxes, masks, class_ids, class_names,
         for verts in contours:
             # Subtract the padding and flip (y, x) to (x, y)
             verts = np.fliplr(verts) - 1
-            p = Polygon(verts, facecolor="none", edgecolor=color)
+            p = Polygon(verts, facecolor="none", edgecolor='black', lw=2)
             ax.add_patch(p)
     masked_image = masked_image.astype(np.uint8)
     ax.imshow(masked_image)
+    plt.savefig(title + '.png')
     plt.show()
-    return masked_image
 
 def draw_rois(image, rois, refined_rois, mask, class_ids, class_names, limit=10):
     """

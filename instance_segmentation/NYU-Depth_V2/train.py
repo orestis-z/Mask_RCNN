@@ -11,13 +11,14 @@ import model as modellib
 
 
 # Directory to save logs and trained model
-MODEL_DIR = os.path.join(ROOT_DIR, "logs")
+# MODEL_DIR = os.path.join(ROOT_DIR, "logs")
+MODEL_DIR = os.path.join("/data/orestisz/logs")
 
 # Path to COCO trained weights
-MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
-# MODEL_PATH = os.path.join(MODEL_DIR, "nyu_depth_v2_scenenet20171121T1912/mask_rcnn_nyu_depth_v2_scenenet_0704.h5")
+# MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
+MODEL_PATH = os.path.join(MODEL_DIR, "scenenet_coco_rgb20180428T1942/mask_rcnn_scenenet_coco_rgb_0600.h5")
 
-# MODEL_PATH = os.path.join(MODEL_DIR, "nyu_depth_v2_scenenet20171121T1912/mask_rcnn_nyu_depth_v2_scenenet_0704.h5")
+# MODEL_PATH = os.path.join(ROOT_DIR, "logs", "scenenet20180428T1942/mask_rcnn_scenenet_0576.h5")
 
 DATASET_DIR = "data"
 
@@ -39,7 +40,8 @@ print('creating model..')
 model = modellib.MaskRCNN(mode="training", config=config,
                           model_dir=MODEL_DIR)
 
-exclude = ["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"]
+# exclude = ["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"]
+exclude = []
 
 # # Which weights to start with?
 init_with = "custom"  # scenenn, last, imagenet
@@ -57,5 +59,5 @@ elif init_with == "last":
 print('fine tuning all layers...')
 model.train(dataset_train, dataset_val, 
             learning_rate=config.LEARNING_RATE,
-            epochs=1000,
-            layers='heads')
+            epochs=640,
+            layers='all')
