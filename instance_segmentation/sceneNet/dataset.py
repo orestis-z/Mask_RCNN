@@ -14,19 +14,20 @@ from instance_segmentation.objects_config import ObjectsConfig
 from instance_segmentation.objects_dataset import ObjectsDataset
 
 
-# BINARY_CLASS = True
-BINARY_CLASS = False
-if BINARY_CLASS:
-    NAME = "sceneNet"
-else:
-    NAME = "sceneNet_classes"
+RGBD = True
+# RGBD = False
+BINARY_CLASS = True
+# BINARY_CLASS = False
+NAME = "sceneNet" if RGBD else "sceneNet_coco_rgb"
+if not BINARY_CLASS:
+    NAME += "_classes"
 
 EXCLUDE = [3, 5, 12] # stuf f (Ceiling, Floor, Wall)
 
 class Config(ObjectsConfig):
     NAME = NAME
 
-    # MODE = 'RGBD'
+    MODE = 'RGBD' if RGBD else 'RGB'
     # MODE = 'RGB'
     BACKBONE = 'resnet50'
     # BACKBONE = 'resnet101'
@@ -42,7 +43,7 @@ class Config(ObjectsConfig):
     # NUM_CLASSES = 80 + 1
 
     # Image mean (RGBD)
-    # MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255.0 / 2]) # , 255.0 / 100])
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255.0 / 2]) if RGBD else np.array([123.7, 116.8, 103.9])
 
     def __init__(self):
         super().__init__()
