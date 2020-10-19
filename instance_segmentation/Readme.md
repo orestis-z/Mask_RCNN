@@ -1,7 +1,7 @@
-folders are structured as follows:
+Folders are structured as follows:
 
-* `dataset.py`: hyperparameters config, interface to datasets
+- `dataset.py`: Hyperparameters config, interface to datasets
 
-* `train.py`: training script
+- `train.py`: Training script
 
-* `eval.ipynb`: evaluation of dataset & training
+- `eval.ipynb`: IPython notebook for the evaluation of the dataset & training

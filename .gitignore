@@ -5,3 +5,4 @@ mask_rcnn_coco.h5
 *.o
 tools/sceneNN/oni_to_RGBD/oniToRGBD
 .idea/
+.DS_STORE
