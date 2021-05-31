@@ -1,6 +1,7 @@
-import os, sys
+import os
+import sys
 
-parentPath = os.path.abspath("..")
+parentPath = os.path.abspath('..')
 if parentPath not in sys.path:
     sys.path.insert(0, parentPath)
 

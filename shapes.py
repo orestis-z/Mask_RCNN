@@ -1,30 +1,29 @@
-"""
-Mask R-CNN
-Configurations and data loading code for the synthetic Shapes dataset.
-This is a duplicate of the code in the noteobook train_shapes.ipynb for easy
-import into other notebooks, such as inspect_model.ipynb.
+"""Mask R-CNN Configurations and data loading code for the synthetic Shapes
+dataset. This is a duplicate of the code in the noteobook train_shapes.ipynb
+for easy import into other notebooks, such as inspect_model.ipynb.
 
-Copyright (c) 2017 Matterport, Inc.
-Licensed under the MIT License (see LICENSE for details)
-Written by Waleed Abdulla
+Copyright (c) 2017 Matterport, Inc. Licensed under the MIT License (see
+LICENSE for details) Written by Waleed Abdulla
 """
 
 import math
 import random
-import numpy as np
-import cv2
 
-from config import Config
+import cv2
+import numpy as np
+
 import utils
+from config import Config
 
 
 class ShapesConfig(Config):
     """Configuration for training on the toy shapes dataset.
-    Derives from the base Config class and overrides values specific
-    to the toy shapes dataset.
+
+    Derives from the base Config class and overrides values specific to
+    the toy shapes dataset.
     """
     # Give the configuration a recognizable name
-    NAME = "shapes"
+    NAME = 'shapes'
 
     # Train on 1 GPU and 8 images per GPU. We can put multiple images on each
     # GPU because the images are small. Batch size is 8 (GPUs * images/GPU).
@@ -54,20 +53,23 @@ class ShapesConfig(Config):
 
 
 class ShapesDataset(utils.Dataset):
-    """Generates the shapes synthetic dataset. The dataset consists of simple
-    shapes (triangles, squares, circles) placed randomly on a blank surface.
-    The images are generated on the fly. No file access required.
+    """Generates the shapes synthetic dataset.
+
+    The dataset consists of simple shapes (triangles, squares, circles)
+    placed randomly on a blank surface. The images are generated on the
+    fly. No file access required.
     """
 
     def load_shapes(self, count, height, width):
         """Generate the requested number of synthetic images.
+
         count: number of images to generate.
         height, width: the size of the generated images.
         """
         # Add classes
-        self.add_class("shapes", 1, "square")
-        self.add_class("shapes", 2, "circle")
-        self.add_class("shapes", 3, "triangle")
+        self.add_class('shapes', 1, 'square')
+        self.add_class('shapes', 2, 'circle')
+        self.add_class('shapes', 3, 'triangle')
 
         # Add images
         # Generate random specifications of images (i.e. color and
@@ -75,15 +77,16 @@ class ShapesDataset(utils.Dataset):
         # actual images. Images are generated on the fly in load_image().
         for i in range(count):
             bg_color, shapes = self.random_image(height, width)
-            self.add_image("shapes", image_id=i, path=None,
+            self.add_image('shapes', image_id=i, path=None,
                            width=width, height=height,
                            bg_color=bg_color, shapes=shapes)
 
     def load_image(self, image_id):
         """Generate an image from the specs of the given image ID.
-        Typically this function loads the image from a file, but
-        in this case it generates the image on the fly from the
-        specs in image_info.
+
+        Typically this function loads the image from a file, but in this
+        case it generates the image on the fly from the specs in
+        image_info.
         """
         info = self.image_info[image_id]
         bg_color = np.array(info['bg_color']).reshape([1, 1, 3])
@@ -96,14 +99,13 @@ class ShapesDataset(utils.Dataset):
     def image_reference(self, image_id):
         """Return the shapes data of the image."""
         info = self.image_info[image_id]
-        if info["source"] == "shapes":
-            return info["shapes"]
+        if info['source'] == 'shapes':
+            return info['shapes']
         else:
             super(self.__class__).image_reference(self, image_id)
 
     def load_mask(self, image_id):
-        """Generate instance masks for shapes of the given image ID.
-        """
+        """Generate instance masks for shapes of the given image ID."""
         info = self.image_info[image_id]
         shapes = info['shapes']
         count = len(shapes)
@@ -128,9 +130,9 @@ class ShapesDataset(utils.Dataset):
         if shape == 'square':
             image = cv2.rectangle(image, (x - s, y - s),
                                   (x + s, y + s), color, -1)
-        elif shape == "circle":
+        elif shape == 'circle':
             image = cv2.circle(image, (x, y), s, color, -1)
-        elif shape == "triangle":
+        elif shape == 'triangle':
             points = np.array([[(x, y - s),
                                 (x - s / math.sin(math.radians(60)), y + s),
                                 (x + s / math.sin(math.radians(60)), y + s),
@@ -139,16 +141,16 @@ class ShapesDataset(utils.Dataset):
         return image
 
     def random_shape(self, height, width):
-        """Generates specifications of a random shape that lies within
-        the given height and width boundaries.
-        Returns a tuple of three valus:
+        """Generates specifications of a random shape that lies within the
+        given height and width boundaries. Returns a tuple of three valus:
+
         * The shape name (square, circle, ...)
         * Shape color: a tuple of 3 values, RGB.
         * Shape dimensions: A tuple of values that define the shape size
                             and location. Differs per shape type.
         """
         # Shape
-        shape = random.choice(["square", "circle", "triangle"])
+        shape = random.choice(['square', 'circle', 'triangle'])
         # Color
         color = tuple([random.randint(0, 255) for _ in range(3)])
         # Center x, y
@@ -161,6 +163,7 @@ class ShapesDataset(utils.Dataset):
 
     def random_image(self, height, width):
         """Creates random specifications of an image with multiple shapes.
+
         Returns the background color of the image and a list of shape
         specifications that can be used to draw the image.
         """

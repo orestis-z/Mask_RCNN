@@ -1,11 +1,13 @@
-import os, sys
+import os
+import sys
+
 import numpy as np
 import scipy
-from scipy.io import loadmat
 from PIL import Image
+from scipy.io import loadmat
 
 # Root directory of the project
-ROOT_DIR = os.path.abspath("../..")
+ROOT_DIR = os.path.abspath('../..')
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
@@ -13,10 +15,12 @@ from instance_segmentation.objects_config import ObjectsConfig
 from instance_segmentation.objects_dataset import ObjectsDataset
 
 
-NAME = "ADE20K"
+NAME = 'ADE20K'
+
 
 class Config(ObjectsConfig):
     NAME = NAME
+
 
 class Dataset(ObjectsDataset):
     def load(self, dataset_dir, subset):
@@ -27,7 +31,7 @@ class Dataset(ObjectsDataset):
         image_ids = range(len(index['folder'][0][0][0]))
 
         # Add classes
-        self.add_class(NAME, 1, "object")
+        self.add_class(NAME, 1, 'object')
 
         # Add images
         folders = index['folder'][0][0][0]
@@ -73,11 +77,12 @@ class Dataset(ObjectsDataset):
         for i, instance in enumerate(instances):
             masks[:, :, i] = (B == instance).astype(np.uint8)
         if not n_instances:
-            raise ValueError("No instances for image {}".format(instance_path))
+            raise ValueError('No instances for image {}'.format(instance_path))
 
         class_ids = np.array([1] * n_instances, dtype=np.int32)
 
         return masks, class_ids
+
 
 if __name__ == '__main__':
     dataset = Dataset()

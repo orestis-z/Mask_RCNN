@@ -1,6 +1,4 @@
-"""
-Mask R-CNN
-Multi-GPU Support for Keras.
+"""Mask R-CNN Multi-GPU Support for Keras.
 
 Copyright (c) 2017 Matterport, Inc.
 Licensed under the MIT License (see LICENSE for details)
@@ -13,14 +11,15 @@ https://github.com/avolkov1/keras_experiments/blob/master/keras_exp/multigpu/
 https://github.com/fchollet/keras/blob/master/keras/utils/training_utils.py
 """
 
-import tensorflow as tf
 import keras.backend as K
 import keras.layers as KL
 import keras.models as KM
+import tensorflow as tf
 
 
 class ParallelModel(KM.Model):
     """Subclasses the standard Keras Model and adds multi-GPU support.
+
     It works by creating a copy of the model on each GPU. Then it slices
     the inputs and sends a slice to each copy of the model, and then
     merges the outputs together and applies the loss on the combined
@@ -29,6 +28,7 @@ class ParallelModel(KM.Model):
 
     def __init__(self, keras_model, gpu_count):
         """Class constructor.
+
         keras_model: The Keras model to parallelize
         gpu_count: Number of GPUs. Must be > 1
         """
@@ -39,22 +39,23 @@ class ParallelModel(KM.Model):
                                             outputs=merged_outputs)
 
     def __getattribute__(self, attrname):
-        """Redirect loading and saving methods to the inner model. That's where
-        the weights are stored."""
+        """Redirect loading and saving methods to the inner model.
+
+        That's where the weights are stored.
+        """
         if 'load' in attrname or 'save' in attrname:
             return getattr(self.inner_model, attrname)
         return super(ParallelModel, self).__getattribute__(attrname)
 
     def summary(self, *args, **kwargs):
-        """Override summary() to display summaries of both, the wrapper
-        and inner models."""
+        """Override summary() to display summaries of both, the wrapper and
+        inner models."""
         super(ParallelModel, self).summary(*args, **kwargs)
         self.inner_model.summary(*args, **kwargs)
 
     def make_parallel(self):
         """Creates a new wrapper model that consists of multiple replicas of
-        the original model placed on different GPUs.
-        """
+        the original model placed on different GPUs."""
         # Slice inputs. Slice inputs on the CPU to avoid sending a copy
         # of the full inputs to all GPUs. Saves on bandwidth and memory.
         input_slices = {name: tf.split(x, self.gpu_count)
@@ -93,7 +94,8 @@ class ParallelModel(KM.Model):
                 def add_dim(tensor):
                     """Add a dimension to tensors that don't have any."""
                     if K.int_shape(tensor) == ():
-                        return KL.Lambda(lambda t: K.reshape(t, [1, 1]))(tensor)
+                        return KL.Lambda(
+                            lambda t: K.reshape(t, [1, 1]))(tensor)
                     return tensor
                 outputs = list(map(add_dim, outputs))
 
@@ -102,7 +104,7 @@ class ParallelModel(KM.Model):
         return merged
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Testing code below. It creates a simple model to train on MNIST and
     # tries to run it on 2 GPUs. It saves the graph so it can be viewed
     # in TensorBoard. Run it as:
@@ -110,8 +112,9 @@ if __name__ == "__main__":
     # python3 parallel_model.py
 
     import os
-    import numpy as np
+
     import keras.optimizers
+    import numpy as np
     from keras.datasets import mnist
     from keras.preprocessing.image import ImageDataGenerator
 
@@ -121,7 +124,7 @@ if __name__ == "__main__":
     ROOT_DIR = os.getcwd()
 
     # Directory to save logs and trained model
-    MODEL_DIR = os.path.join(ROOT_DIR, "logs/parallel")
+    MODEL_DIR = os.path.join(ROOT_DIR, 'logs/parallel')
 
     def build_model(x_train, num_classes):
         # Reset default graph. Keras leaves old ops in the graph,
@@ -129,17 +132,17 @@ if __name__ == "__main__":
         # visualization in TensorBoard.
         tf.reset_default_graph()
 
-        inputs = KL.Input(shape=x_train.shape[1:], name="input_image")
-        x = KL.Conv2D(32, (3, 3), activation='relu', padding="same",
-                      name="conv1")(inputs)
-        x = KL.Conv2D(64, (3, 3), activation='relu', padding="same",
-                      name="conv2")(x)
-        x = KL.MaxPooling2D(pool_size=(2, 2), name="pool1")(x)
-        x = KL.Flatten(name="flat1")(x)
-        x = KL.Dense(128, activation='relu', name="dense1")(x)
-        x = KL.Dense(num_classes, activation='softmax', name="dense2")(x)
+        inputs = KL.Input(shape=x_train.shape[1:], name='input_image')
+        x = KL.Conv2D(32, (3, 3), activation='relu', padding='same',
+                      name='conv1')(inputs)
+        x = KL.Conv2D(64, (3, 3), activation='relu', padding='same',
+                      name='conv2')(x)
+        x = KL.MaxPooling2D(pool_size=(2, 2), name='pool1')(x)
+        x = KL.Flatten(name='flat1')(x)
+        x = KL.Dense(128, activation='relu', name='dense1')(x)
+        x = KL.Dense(num_classes, activation='softmax', name='dense2')(x)
 
-        return KM.Model(inputs, x, "digit_classifier_model")
+        return KM.Model(inputs, x, 'digit_classifier_model')
 
     # Load MNIST Data
     (x_train, y_train), (x_test, y_test) = mnist.load_data()

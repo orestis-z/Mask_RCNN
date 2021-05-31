@@ -1,32 +1,31 @@
-"""
-checkout toolbox at https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
-to understand how labels are loded
-"""
+"""checkout toolbox at https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
+to understand how labels are loded."""
 
-import os, sys
+import os
+import sys
+
 import numpy as np
-import cv2
-import skimage.io
-import random
 
 # Root directory of the project
-ROOT_DIR = os.path.abspath("../..")
+ROOT_DIR = os.path.abspath('../..')
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+from data.names import names
 from instance_segmentation.objects_config import ObjectsConfig
 from instance_segmentation.objects_dataset import ObjectsDataset, normalize
-from data.names import names
 
 
 BINARY_CLASS = True
 # BINARY_CLASS = False
 if BINARY_CLASS:
-    NAME = "NYU_Depth_V2_scenenet_rgb_all_layers_2"
+    NAME = 'NYU_Depth_V2_scenenet_rgb_all_layers_2'
 else:
-    NAME = "NYU_Depth_V2_scenenet_rgb_all_layers_2_classes"
+    NAME = 'NYU_Depth_V2_scenenet_rgb_all_layers_2_classes'
 
-EXCLUDE = ['floor', 'wall', 'ceiling'] # exclude stuff (include only well-localized objects)
+# exclude stuff (include only well-localized objects)
+EXCLUDE = ['floor', 'wall', 'ceiling']
+
 
 class Config(ObjectsConfig):
     NAME = NAME
@@ -43,7 +42,8 @@ class Config(ObjectsConfig):
     LEARNING_RATE = 0.001
 
     # Image mean (RGBD)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2]) # 1220.7 / 1000, 255.0 / 100])
+    # 1220.7 / 1000, 255.0 / 100])
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 255 / 2])
 
     def __init__(self):
         super().__init__()
@@ -74,12 +74,14 @@ class Dataset(ObjectsDataset):
             dirs[:] = [d for d in dirs if d not in exclude]
             root_split = root.split('/')
             if root_split[-1] == 'images':
-                print('Loading {} data from {}, {}'.format(subset, root_split[-3], root_split[-2]))
+                print('Loading {} data from {}, {}'.format(
+                    subset, root_split[-3], root_split[-2]))
                 for j, file in enumerate(files):
                     if j % (skip + 1) == 0:
                         parent_path = '/'.join(root.split('/')[:-1])
                         depth_path = os.path.join(parent_path, 'depths', file)
-                        instances_path = os.path.join(parent_path, 'instances', file)
+                        instances_path = os.path.join(
+                            parent_path, 'instances', file)
                         labels_path = os.path.join(parent_path, 'labels', file)
                         path = os.path.join(root, file)
                         self.add_image(
@@ -95,13 +97,17 @@ class Dataset(ObjectsDataset):
                         count += 1
         print('added {} images for {}'.format(count, subset))
 
-    def load_image(self, image_id, mode="RGBD"):
+    def load_image(self, image_id, mode='RGBD'):
         if self.use_generated:
             parent_path = self.image_info[image_id]['parent_path']
             file_name = self.image_info[image_id]['file_name']
-            return np.load(os.path.join(parent_path, img_path, file_name + ".npy"))
+            return np.load(
+                os.path.join(
+                    parent_path,
+                    img_path,
+                    file_name + '.npy'))
         image = np.load(self.image_info[image_id]['path']).T
-        if mode == "RGBD":
+        if mode == 'RGBD':
             depth = np.load(self.image_info[image_id]['depth_path']).T
             depth = normalize(depth)
             rgbd = np.dstack((image, depth))
@@ -152,11 +158,21 @@ class Dataset(ObjectsDataset):
         unique_instances = np.stack((labels, instances))
 
         n_instances = unique_instances.shape[1]
-        instances = np.repeat(np.expand_dims(instances_img, axis=2), n_instances, axis=2)
-        labels = np.repeat(np.expand_dims(labels_img, axis=2), n_instances, axis=2)
-        masks = self.to_mask_v(instances, labels, unique_instances[0], unique_instances[1])
+        instances = np.repeat(
+            np.expand_dims(instances_img, axis=2),
+            n_instances,
+            axis=2)
+        labels = np.repeat(
+            np.expand_dims(labels_img, axis=2),
+            n_instances,
+            axis=2)
+        masks = self.to_mask_v(
+            instances,
+            labels,
+            unique_instances[0],
+            unique_instances[1])
         if not n_instances:
-            raise ValueError("No instances for image {}".format(mask_path))
+            raise ValueError('No instances for image {}'.format(mask_path))
 
         if BINARY_CLASS:
             class_ids = np.array([1] * n_instances, dtype=np.int32)
@@ -165,8 +181,10 @@ class Dataset(ObjectsDataset):
 
         return masks, class_ids
 
+
 if __name__ == '__main__':
     dataset = Dataset()
-    dataset.load('/home/orestisz/repositories/Mask_RCNN/instance_segmentation/NYU-Depth_V2/data', 'validation')
+    dataset.load(
+        '/home/orestisz/repositories/Mask_RCNN/instance_segmentation/NYU-Depth_V2/data',
+        'validation')
     masks, class_ids = dataset.load_mask(0)
-

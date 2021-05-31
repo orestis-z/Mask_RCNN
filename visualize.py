@@ -1,22 +1,20 @@
-"""
-Mask R-CNN
-Display and Visualization Functions.
+"""Mask R-CNN Display and Visualization Functions.
 
-Copyright (c) 2017 Matterport, Inc.
-Licensed under the MIT License (see LICENSE for details)
-Written by Waleed Abdulla
+Copyright (c) 2017 Matterport, Inc. Licensed under the MIT License (see
+LICENSE for details) Written by Waleed Abdulla
 """
 
-import random
-import itertools
 import colorsys
-import numpy as np
-from skimage.measure import find_contours
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.lines as lines
-from matplotlib.patches import Polygon
+import itertools
+import random
+
 import IPython.display
+import matplotlib.lines as lines
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Polygon
+from skimage.measure import find_contours
 
 import utils
 
@@ -28,6 +26,7 @@ import utils
 def display_images(images, titles=None, cols=4, cmap=None, norm=None,
                    interpolation=None):
     """Display the given set of images, optionally with titles.
+
     images: list or array of image tensors in HWC format.
     titles: optional. A list of titles to display with each image.
     cols: number of images per row
@@ -35,7 +34,7 @@ def display_images(images, titles=None, cols=4, cmap=None, norm=None,
     norm: Optional. A Normalize instance to map values to colors.
     interpolation: Optional. Image interporlation to use for display.
     """
-    titles = titles if titles is not None else [""] * len(images)
+    titles = titles if titles is not None else [''] * len(images)
     rows = len(images) // cols + 1
     plt.figure(figsize=(14, 14 * rows // cols))
     i = 1
@@ -50,8 +49,8 @@ def display_images(images, titles=None, cols=4, cmap=None, norm=None,
 
 
 def random_colors(N, bright=True):
-    """
-    Generate random colors.
+    """Generate random colors.
+
     To get visually distinct colors, generate them in HSV space then
     convert to RGB.
     """
@@ -63,8 +62,7 @@ def random_colors(N, bright=True):
 
 
 def apply_mask(image, mask, color, alpha=0.5):
-    """Apply the given mask to the image.
-    """
+    """Apply the given mask to the image."""
     for c in range(3):
         image[:, :, c] = np.where(mask == 1,
                                   image[:, :, c] *
@@ -74,7 +72,7 @@ def apply_mask(image, mask, color, alpha=0.5):
 
 
 def display_instances(image, boxes, masks, class_ids, class_names,
-                      scores=None, title="",
+                      scores=None, title='',
                       figsize=(16, 16), ax=None, colors=None):
     """
     boxes: [num_instance, (y1, x1, y2, x2, class_id)] in image coordinates.
@@ -87,7 +85,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
     # Number of instances
     N = boxes.shape[0]
     if not N:
-        print("\n*** No instances to display *** \n")
+        print('\n*** No instances to display *** \n')
     else:
         assert boxes.shape[0] == masks.shape[-1] == class_ids.shape[0]
 
@@ -119,7 +117,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             # Skip this instance. Has no bbox. Likely lost in image cropping.
             continue
         y1, x1, y2, x2 = boxes[i]
-        
+
         # if len(boxes):
         #     p = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=2,
         #                       alpha=0.7, linestyle="dashed",
@@ -127,9 +125,9 @@ def display_instances(image, boxes, masks, class_ids, class_names,
         #     ax.add_patch(p)
 
         # Label
-        score = scores[i] if scores is not None else None
-        label = class_names[class_id]
-        x = random.randint(x1, (x1 + x2) // 2)
+        scores[i] if scores is not None else None
+        class_names[class_id]
+        random.randint(x1, (x1 + x2) // 2)
         # caption = "{} {:.3f}".format(label, score) if score else label
         # caption = label
         # ax.text(x1, y1 + 8, caption,
@@ -149,14 +147,22 @@ def display_instances(image, boxes, masks, class_ids, class_names,
         for verts in contours:
             # Subtract the padding and flip (y, x) to (x, y)
             verts = np.fliplr(verts) - 1
-            p = Polygon(verts, facecolor="none", edgecolor='black', lw=2)
+            p = Polygon(verts, facecolor='none', edgecolor='black', lw=2)
             ax.add_patch(p)
     masked_image = masked_image.astype(np.uint8)
     ax.imshow(masked_image)
     plt.savefig(title + '.png')
     plt.show()
 
-def draw_rois(image, rois, refined_rois, mask, class_ids, class_names, limit=10):
+
+def draw_rois(
+        image,
+        rois,
+        refined_rois,
+        mask,
+        class_ids,
+        class_names,
+        limit=10):
     """
     anchors: [n, (y1, x1, y2, x2)] list of anchors in image coordinates.
     proposals: [n, 4] the same anchors but refined to fit objects better.
@@ -170,10 +176,10 @@ def draw_rois(image, rois, refined_rois, mask, class_ids, class_names, limit=10)
 
     fig, ax = plt.subplots(1, figsize=(12, 12))
     if rois.shape[0] > limit:
-        plt.title("Showing {} random ROIs out of {}".format(
+        plt.title('Showing {} random ROIs out of {}'.format(
             len(ids), rois.shape[0]))
     else:
-        plt.title("{} ROIs".format(len(ids)))
+        plt.title('{} ROIs'.format(len(ids)))
 
     # Show area outside image boundaries.
     ax.set_ylim(image.shape[0] + 20, -20)
@@ -186,22 +192,29 @@ def draw_rois(image, rois, refined_rois, mask, class_ids, class_names, limit=10)
         # ROI
         y1, x1, y2, x2 = rois[id]
         p = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=2,
-                              edgecolor=color if class_id else "gray",
-                              facecolor='none', linestyle="dashed")
+                              edgecolor=color if class_id else 'gray',
+                              facecolor='none', linestyle='dashed')
         ax.add_patch(p)
         # Refined ROI
         if class_id:
             ry1, rx1, ry2, rx2 = refined_rois[id]
-            p = patches.Rectangle((rx1, ry1), rx2 - rx1, ry2 - ry1, linewidth=2,
-                                  edgecolor=color, facecolor='none')
+            p = patches.Rectangle(
+                (rx1,
+                 ry1),
+                rx2 - rx1,
+                ry2 - ry1,
+                linewidth=2,
+                edgecolor=color,
+                facecolor='none')
             ax.add_patch(p)
-            # Connect the top-left corners of the anchor and proposal for easy visualization
+            # Connect the top-left corners of the anchor and proposal for easy
+            # visualization
             ax.add_line(lines.Line2D([x1, rx1], [y1, ry1], color=color))
 
             # Label
             label = class_names[class_id]
-            ax.text(rx1, ry1 + 8, "{}".format(label),
-                    color='w', size=11, backgroundcolor="none")
+            ax.text(rx1, ry1 + 8, '{}'.format(label),
+                    color='w', size=11, backgroundcolor='none')
 
             # Mask
             m = utils.unmold_mask(mask[id], rois[id]
@@ -211,15 +224,16 @@ def draw_rois(image, rois, refined_rois, mask, class_ids, class_names, limit=10)
     ax.imshow(masked_image)
 
     # Print stats
-    print("Positive ROIs: ", class_ids[class_ids > 0].shape[0])
-    print("Negative ROIs: ", class_ids[class_ids == 0].shape[0])
-    print("Positive Ratio: {:.2f}".format(
+    print('Positive ROIs: ', class_ids[class_ids > 0].shape[0])
+    print('Negative ROIs: ', class_ids[class_ids == 0].shape[0])
+    print('Positive Ratio: {:.2f}'.format(
         class_ids[class_ids > 0].shape[0] / class_ids.shape[0]))
 
 
 # TODO: Replace with matplotlib equivalent?
 def draw_box(image, box, color):
     """Draw 3-pixel width bounding boxes on the given image array.
+
     color: list of 3 int values for RGB.
     """
     y1, x1, y2, x2 = box
@@ -235,7 +249,7 @@ def display_top_masks(image, mask, class_ids, class_names, limit=4):
     to_display = []
     titles = []
     to_display.append(image)
-    titles.append("H x W={}x{}".format(image.shape[0], image.shape[1]))
+    titles.append('H x W={}x{}'.format(image.shape[0], image.shape[1]))
     # Pick top prominent classes in this image
     unique_class_ids = np.unique(class_ids)
     mask_area = [np.sum(mask[:, :, np.where(class_ids == i)[0]])
@@ -249,8 +263,8 @@ def display_top_masks(image, mask, class_ids, class_names, limit=4):
         m = mask[:, :, np.where(class_ids == class_id)[0]]
         m = np.sum(m * np.arange(1, m.shape[-1] + 1), -1)
         to_display.append(m)
-        titles.append(class_names[class_id] if class_id != -1 else "-")
-    display_images(to_display, titles=titles, cols=limit + 1, cmap="Blues_r")
+        titles.append(class_names[class_id] if class_id != -1 else '-')
+    display_images(to_display, titles=titles, cols=limit + 1, cmap='Blues_r')
 
 
 def plot_precision_recall(AP, precisions, recalls):
@@ -262,7 +276,7 @@ def plot_precision_recall(AP, precisions, recalls):
     """
     # Plot the Precision-Recall curve
     _, ax = plt.subplots(1)
-    ax.set_title("Precision-Recall Curve. AP@50 = {:.3f}".format(AP))
+    ax.set_title('Precision-Recall Curve. AP@50 = {:.3f}'.format(AP))
     ax.set_ylim(0, 1.1)
     ax.set_xlim(0, 1.1)
     _ = ax.plot(recalls, precisions)
@@ -271,6 +285,7 @@ def plot_precision_recall(AP, precisions, recalls):
 def plot_overlaps(gt_class_ids, pred_class_ids, pred_scores,
                   overlaps, class_names, threshold=0.5):
     """Draw a grid showing how ground truth objects are classified.
+
     gt_class_ids: [N] int. Ground truth class IDs
     pred_class_id: [N] int. Predicted class IDs
     pred_scores: [N] float. The probability scores of predicted classes
@@ -284,7 +299,7 @@ def plot_overlaps(gt_class_ids, pred_class_ids, pred_scores,
     plt.figure(figsize=(12, 10))
     plt.imshow(overlaps, interpolation='nearest', cmap=plt.cm.Blues)
     plt.yticks(np.arange(len(pred_class_ids)),
-               ["{} ({:.2f})".format(class_names[int(id)], pred_scores[i])
+               ['{} ({:.2f})'.format(class_names[int(id)], pred_scores[i])
                 for i, id in enumerate(pred_class_ids)])
     plt.xticks(np.arange(len(gt_class_ids)),
                [class_names[int(id)] for id in gt_class_ids], rotation=90)
@@ -292,26 +307,25 @@ def plot_overlaps(gt_class_ids, pred_class_ids, pred_scores,
     thresh = overlaps.max() / 2.
     for i, j in itertools.product(range(overlaps.shape[0]),
                                   range(overlaps.shape[1])):
-        text = ""
+        text = ''
         if overlaps[i, j] > threshold:
-            text = "match" if gt_class_ids[j] == pred_class_ids[i] else "wrong"
-        color = ("white" if overlaps[i, j] > thresh
-                 else "black" if overlaps[i, j] > 0
-                 else "grey")
-        plt.text(j, i, "{:.3f}\n{}".format(overlaps[i, j], text),
-                 horizontalalignment="center", verticalalignment="center",
+            text = 'match' if gt_class_ids[j] == pred_class_ids[i] else 'wrong'
+        color = ('white' if overlaps[i, j] > thresh
+                 else 'black' if overlaps[i, j] > 0
+                 else 'grey')
+        plt.text(j, i, '{:.3f}\n{}'.format(overlaps[i, j], text),
+                 horizontalalignment='center', verticalalignment='center',
                  fontsize=9, color=color)
 
     plt.tight_layout()
-    plt.xlabel("Ground Truth")
-    plt.ylabel("Predictions")
+    plt.xlabel('Ground Truth')
+    plt.ylabel('Predictions')
 
 
 def draw_boxes(image, boxes=None, refined_boxes=None,
                masks=None, captions=None, visibilities=None,
-               title="", ax=None):
-    """Draw bounding boxes and segmentation masks with differnt
-    customizations.
+               title='', ax=None):
+    """Draw bounding boxes and segmentation masks with differnt customizations.
 
     boxes: [N, (y1, x1, y2, x2, class_id)] in image coordinates.
     refined_boxes: Like boxes, but draw with solid lines to show
@@ -347,16 +361,16 @@ def draw_boxes(image, boxes=None, refined_boxes=None,
         # Box visibility
         visibility = visibilities[i] if visibilities is not None else 1
         if visibility == 0:
-            color = "gray"
-            style = "dotted"
+            color = 'gray'
+            style = 'dotted'
             alpha = 0.5
         elif visibility == 1:
             color = colors[i]
-            style = "dotted"
+            style = 'dotted'
             alpha = 1
         elif visibility == 2:
             color = colors[i]
-            style = "solid"
+            style = 'solid'
             alpha = 1
 
         # Boxes
@@ -373,8 +387,14 @@ def draw_boxes(image, boxes=None, refined_boxes=None,
         # Refined boxes
         if refined_boxes is not None and visibility > 0:
             ry1, rx1, ry2, rx2 = refined_boxes[i].astype(np.int32)
-            p = patches.Rectangle((rx1, ry1), rx2 - rx1, ry2 - ry1, linewidth=2,
-                                  edgecolor=color, facecolor='none')
+            p = patches.Rectangle(
+                (rx1,
+                 ry1),
+                rx2 - rx1,
+                ry2 - ry1,
+                linewidth=2,
+                edgecolor=color,
+                facecolor='none')
             ax.add_patch(p)
             # Connect the top-left corners of the anchor and proposal
             if boxes is not None:
@@ -386,9 +406,9 @@ def draw_boxes(image, boxes=None, refined_boxes=None,
             # If there are refined boxes, display captions on them
             if refined_boxes is not None:
                 y1, x1, y2, x2 = ry1, rx1, ry2, rx2
-            x = random.randint(x1, (x1 + x2) // 2)
+            random.randint(x1, (x1 + x2) // 2)
             ax.text(x1, y1, caption, size=11, verticalalignment='top',
-                    color='w', backgroundcolor="none",
+                    color='w', backgroundcolor='none',
                     bbox={'facecolor': color, 'alpha': 0.5,
                           'pad': 2, 'edgecolor': 'none'})
 
@@ -405,39 +425,39 @@ def draw_boxes(image, boxes=None, refined_boxes=None,
             for verts in contours:
                 # Subtract the padding and flip (y, x) to (x, y)
                 verts = np.fliplr(verts) - 1
-                p = Polygon(verts, facecolor="none", edgecolor=color)
+                p = Polygon(verts, facecolor='none', edgecolor=color)
                 ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
 
 
 def display_table(table):
     """Display values in a table format.
+
     table: an iterable of rows, and each row is an iterable of values.
     """
-    html = ""
+    html = ''
     for row in table:
-        row_html = ""
+        row_html = ''
         for col in row:
-            row_html += "<td>{:40}</td>".format(str(col))
-        html += "<tr>" + row_html + "</tr>"
-    html = "<table>" + html + "</table>"
+            row_html += '<td>{:40}</td>'.format(str(col))
+        html += '<tr>' + row_html + '</tr>'
+    html = '<table>' + html + '</table>'
     IPython.display.display(IPython.display.HTML(html))
 
 
 def display_weight_stats(model):
-    """Scans all the weights in the model and returns a list of tuples
-    that contain stats about each weight.
-    """
+    """Scans all the weights in the model and returns a list of tuples that
+    contain stats about each weight."""
     layers = model.get_trainable_layers()
-    table = [["WEIGHT NAME", "SHAPE", "MIN", "MAX", "STD"]]
+    table = [['WEIGHT NAME', 'SHAPE', 'MIN', 'MAX', 'STD']]
     for l in layers:
         weight_values = l.get_weights()  # list of Numpy arrays
         weight_tensors = l.weights  # list of TF tensors
         for i, w in enumerate(weight_values):
             weight_name = weight_tensors[i].name
             # Detect problematic layers. Exclude biases of conv layers.
-            alert = ""
-            if w.min() == w.max() and not (l.__class__.__name__ == "Conv2D" and i == 1):
+            alert = ''
+            if w.min() == w.max() and not (l.__class__.__name__ == 'Conv2D' and i == 1):
                 alert += "<span style='color:red'>*** dead?</span>"
             if np.abs(w.min()) > 1000 or np.abs(w.max()) > 1000:
                 alert += "<span style='color:red'>*** Overflow?</span>"
@@ -445,8 +465,8 @@ def display_weight_stats(model):
             table.append([
                 weight_name + alert,
                 str(w.shape),
-                "{:+9.4f}".format(w.min()),
-                "{:+10.4f}".format(w.max()),
-                "{:+9.4f}".format(w.std()),
+                '{:+9.4f}'.format(w.min()),
+                '{:+10.4f}'.format(w.max()),
+                '{:+9.4f}'.format(w.std()),
             ])
     display_table(table)

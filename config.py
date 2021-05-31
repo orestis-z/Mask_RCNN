@@ -1,13 +1,11 @@
-"""
-Mask R-CNN
-Base Configurations class.
+"""Mask R-CNN Base Configurations class.
 
-Copyright (c) 2017 Matterport, Inc.
-Licensed under the MIT License (see LICENSE for details)
-Written by Waleed Abdulla
+Copyright (c) 2017 Matterport, Inc. Licensed under the MIT License (see
+LICENSE for details) Written by Waleed Abdulla
 """
 
 import math
+
 import numpy as np
 
 
@@ -16,9 +14,10 @@ import numpy as np
 # the configurations you need to change.
 
 class Config(object):
-    """Base configuration class. For custom configurations, create a
-    sub-class that inherits from this one and override properties
-    that need to be changed.
+    """Base configuration class.
+
+    For custom configurations, create a sub-class that inherits from
+    this one and override properties that need to be changed.
     """
     # Name the configurations. For example, 'COCO', 'Experiment 3', ...etc.
     # Useful if your code needs to do things differently depending on which
@@ -53,7 +52,7 @@ class Config(object):
 
     # Backbone network architecture
     # Supported values are: resnet50, resnet101
-    BACKBONE = "resnet101"
+    BACKBONE = 'resnet101'
 
     # The strides of each layer of the FPN Pyramid. These values
     # are based on a Resnet101 backbone.
@@ -168,8 +167,8 @@ class Config(object):
 
     def display(self):
         """Display Configuration values."""
-        print("\nConfigurations:")
+        print('\nConfigurations:')
         for a in dir(self):
-            if not a.startswith("__") and not callable(getattr(self, a)):
-                print("{:30} {}".format(a, getattr(self, a)))
-        print("\n")
+            if not a.startswith('__') and not callable(getattr(self, a)):
+                print('{:30} {}'.format(a, getattr(self, a)))
+        print('\n')

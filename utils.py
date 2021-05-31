@@ -1,28 +1,22 @@
-"""
-Mask R-CNN
-Common utility functions and classes.
+"""Mask R-CNN Common utility functions and classes.
 
-Copyright (c) 2017 Matterport, Inc.
-Licensed under the MIT License (see LICENSE for details)
-Written by Waleed Abdulla
+Copyright (c) 2017 Matterport, Inc. Licensed under the MIT License (see
+LICENSE for details) Written by Waleed Abdulla
 """
 
-import sys
-import os
-import math
-import random
+import shutil
+import time
+import urllib.request
+
 import numpy as np
-import tensorflow as tf
 import scipy.misc
 import skimage.color
 import skimage.io
-import urllib.request
-import shutil
-import time
+import tensorflow as tf
 
 
 # URL from which to download the latest COCO trained weights
-COCO_MODEL_URL = "https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5"
+COCO_MODEL_URL = 'https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5'
 
 
 ############################################################
@@ -77,10 +71,11 @@ def compute_iou(box, boxes, box_area, boxes_area):
 
 
 def compute_overlaps(boxes1, boxes2):
-    """Computes IoU overlaps between two sets of boxes.
-    boxes1, boxes2: [N, (y1, x1, y2, x2)].
+    """Computes IoU overlaps between two sets of boxes. boxes1, boxes2: [N,
+    (y1, x1, y2, x2)].
 
-    For better performance, pass the largest set first and the smaller second.
+    For better performance, pass the largest set first and the smaller
+    second.
     """
     # Areas of anchors and GT boxes
     area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
@@ -96,9 +91,10 @@ def compute_overlaps(boxes1, boxes2):
 
 
 def compute_overlaps_masks(masks1, masks2):
-    '''Computes IoU overlaps between two sets of masks.
+    """Computes IoU overlaps between two sets of masks.
+
     masks1, masks2: [Height, Width, instances]
-    '''
+    """
     # flatten masks
     masks1 = np.reshape(masks1 > .5, (-1, masks1.shape[-1])).astype(np.float32)
     masks2 = np.reshape(masks2 > .5, (-1, masks2.shape[-1])).astype(np.float32)
@@ -115,12 +111,13 @@ def compute_overlaps_masks(masks1, masks2):
 
 def non_max_suppression(boxes, scores, threshold):
     """Performs non-maximum supression and returns indicies of kept boxes.
+
     boxes: [N, (y1, x1, y2, x2)]. Notice that (y2, x2) lays outside the box.
     scores: 1-D array of box scores.
     threshold: Float. IoU threshold to use for filtering.
     """
     assert boxes.shape[0] > 0
-    if boxes.dtype.kind != "f":
+    if boxes.dtype.kind != 'f':
         boxes = boxes.astype(np.float32)
 
     # Compute box areas
@@ -152,6 +149,7 @@ def non_max_suppression(boxes, scores, threshold):
 
 def apply_box_deltas(boxes, deltas):
     """Applies the given deltas to the given boxes.
+
     boxes: [N, (y1, x1, y2, x2)]. Note that (y2, x2) is outside the box.
     deltas: [N, (dy, dx, log(dh), log(dw))]
     """
@@ -176,6 +174,7 @@ def apply_box_deltas(boxes, deltas):
 
 def box_refinement_graph(box, gt_box):
     """Compute refinement needed to transform box to gt_box.
+
     box and gt_box are [N, (y1, x1, y2, x2)]
     """
     box = tf.cast(box, tf.float32)
@@ -202,8 +201,9 @@ def box_refinement_graph(box, gt_box):
 
 def box_refinement(box, gt_box):
     """Compute refinement needed to transform box to gt_box.
-    box and gt_box are [N, (y1, x1, y2, x2)]. (y2, x2) is
-    assumed to be outside the box.
+
+    box and gt_box are [N, (y1, x1, y2, x2)]. (y2, x2) is assumed to be
+    outside the box.
     """
     box = box.astype(np.float32)
     gt_box = gt_box.astype(np.float32)
@@ -231,9 +231,8 @@ def box_refinement(box, gt_box):
 ############################################################
 
 class Dataset(object):
-    """The base class for dataset classes.
-    To use it, create a new class that adds functions specific to the dataset
-    you want to use. For example:
+    """The base class for dataset classes. To use it, create a new class that
+    adds functions specific to the dataset you want to use. For example:
 
     class CatsAndDogsDataset(Dataset):
         def load_cats_and_dogs(self):
@@ -250,28 +249,28 @@ class Dataset(object):
         self._image_ids = []
         self.image_info = []
         # Background is always the first class
-        self.class_info = [{"source": "", "id": 0, "name": "BG"}]
+        self.class_info = [{'source': '', 'id': 0, 'name': 'BG'}]
         self.source_class_ids = {}
 
     def add_class(self, source, class_id, class_name):
-        assert "." not in source, "Source name cannot contain a dot"
+        assert '.' not in source, 'Source name cannot contain a dot'
         # Does the class exist already?
         for info in self.class_info:
-            if info['source'] == source and info["id"] == class_id:
+            if info['source'] == source and info['id'] == class_id:
                 # source.class_id combination already available, skip
                 return
         # Add the class
         self.class_info.append({
-            "source": source,
-            "id": class_id,
-            "name": class_name,
+            'source': source,
+            'id': class_id,
+            'name': class_name,
         })
 
     def add_image(self, source, image_id, path, **kwargs):
         image_info = {
-            "id": image_id,
-            "source": source,
-            "path": path,
+            'id': image_id,
+            'source': source,
+            'path': path,
         }
         image_info.update(kwargs)
         self.image_info.append(image_info)
@@ -280,10 +279,10 @@ class Dataset(object):
         """Return a link to the image in its source Website or details about
         the image that help looking it up or debugging it.
 
-        Override for your dataset, but pass to this function
-        if you encounter images not in your dataset.
+        Override for your dataset, but pass to this function if you
+        encounter images not in your dataset.
         """
-        return ""
+        return ''
 
     def prepare(self, class_map=None):
         """Prepares the Dataset class for use.
@@ -293,18 +292,21 @@ class Dataset(object):
         """
 
         def clean_name(name):
-            """Returns a shorter version of object names for cleaner display."""
-            return ",".join(name.split(",")[:1])
+            """Returns a shorter version of object names for cleaner
+            display."""
+            return ','.join(name.split(',')[:1])
 
         # Build (or rebuild) everything else from the info dicts.
         self.num_classes = len(self.class_info)
         self.class_ids = np.arange(self.num_classes)
-        self.class_names = [clean_name(c["name"]) for c in self.class_info]
+        self.class_names = [clean_name(c['name']) for c in self.class_info]
         self.num_images = len(self.image_info)
         self._image_ids = np.arange(self.num_images)
 
-        self.class_from_source_map = {"{}.{}".format(info['source'], info['id']): id
-                                      for info, id in zip(self.class_info, self.class_ids)}
+        self.class_from_source_map = {
+            '{}.{}'.format(
+                info['source'], info['id']): id for info, id in zip(
+                self.class_info, self.class_ids)}
 
         # Map sources to class_ids they support
         self.sources = list(set([i['source'] for i in self.class_info]))
@@ -321,13 +323,13 @@ class Dataset(object):
     def map_source_class_id(self, source_class_id):
         """Takes a source class ID and returns the int class ID assigned to it.
 
-        For example:
-        dataset.map_source_class_id("coco.12") -> 23
+        For example: dataset.map_source_class_id("coco.12") -> 23
         """
         return self.class_from_source_map[source_class_id]
 
     def get_source_class_id(self, class_id, source):
-        """Map an internal class ID to the corresponding class ID in the source dataset."""
+        """Map an internal class ID to the corresponding class ID in the source
+        dataset."""
         info = self.class_info[class_id]
         assert info['source'] == source
         return info['id']
@@ -335,13 +337,13 @@ class Dataset(object):
     def append_data(self, class_info, image_info):
         self.external_to_class_id = {}
         for i, c in enumerate(self.class_info):
-            for ds, id in c["map"]:
+            for ds, id in c['map']:
                 self.external_to_class_id[ds + str(id)] = i
 
         # Map external image IDs to internal ones.
         self.external_to_image_id = {}
         for i, info in enumerate(self.image_info):
-            self.external_to_image_id[info["ds"] + str(info["id"])] = i
+            self.external_to_image_id[info['ds'] + str(info['id'])] = i
 
     @property
     def image_ids(self):
@@ -349,14 +351,14 @@ class Dataset(object):
 
     def source_image_link(self, image_id):
         """Returns the path or URL to the image.
-        Override this to return a URL to the image if it's availble online for easy
-        debugging.
-        """
-        return self.image_info[image_id]["path"]
 
-    def load_image(self, image_id, mode="RGB"):
-        """Load the specified image and return a [H,W,3] Numpy array.
+        Override this to return a URL to the image if it's availble
+        online for easy debugging.
         """
+        return self.image_info[image_id]['path']
+
+    def load_image(self, image_id, mode='RGB'):
+        """Load the specified image and return a [H,W,3] Numpy array."""
         # Load image
         image = skimage.io.imread(self.image_info[image_id]['path'])
         # If grayscale. Convert to RGB for consistency.
@@ -384,8 +386,7 @@ class Dataset(object):
 
 
 def resize_image(image, min_dim=None, max_dim=None, padding=False):
-    """
-    Resizes an image keeping the aspect ratio.
+    """Resizes an image keeping the aspect ratio.
 
     min_dim: if provided, resizes the image such that it's smaller
         dimension == min_dim
@@ -418,8 +419,8 @@ def resize_image(image, min_dim=None, max_dim=None, padding=False):
             scale = max_dim / image_max
     # Resize image and mask
     if scale != 1:
-#         image = scipy.misc.imresize(
-#             image, (round(h * scale), round(w * scale)))
+        #         image = scipy.misc.imresize(
+        #             image, (round(h * scale), round(w * scale)))
         image = scipy.ndimage.zoom(image, [scale, scale, 1])
         image = np.clip(image, 0, 255)
     # Need padding?
@@ -437,9 +438,9 @@ def resize_image(image, min_dim=None, max_dim=None, padding=False):
 
 
 def resize_mask(mask, scale, padding):
-    """Resizes a mask using the given scale and padding.
-    Typically, you get the scale and padding from resize_image() to
-    ensure both, the image and the mask, are resized consistently.
+    """Resizes a mask using the given scale and padding. Typically, you get the
+    scale and padding from resize_image() to ensure both, the image and the
+    mask, are resized consistently.
 
     scale: mask scaling factor
     padding: Padding to add to the mask in the form
@@ -452,8 +453,8 @@ def resize_mask(mask, scale, padding):
 
 
 def minimize_mask(bbox, mask, mini_shape):
-    """Resize masks to a smaller version to cut memory load.
-    Mini-masks can then resized back to image scale using expand_masks()
+    """Resize masks to a smaller version to cut memory load. Mini-masks can
+    then resized back to image scale using expand_masks()
 
     See inspect_data.ipynb notebook for more details.
     """
@@ -463,15 +464,15 @@ def minimize_mask(bbox, mask, mini_shape):
         y1, x1, y2, x2 = bbox[i][:4]
         m = m[y1:y2, x1:x2]
         if m.size == 0:
-            raise Exception("Invalid bounding box with area of zero")
+            raise Exception('Invalid bounding box with area of zero')
         m = scipy.misc.imresize(m.astype(float), mini_shape, interp='bilinear')
         mini_mask[:, :, i] = np.where(m >= 128, 1, 0)
     return mini_mask
 
 
 def expand_mask(bbox, mini_mask, image_shape):
-    """Resizes mini masks back to image size. Reverses the change
-    of minimize_mask().
+    """Resizes mini masks back to image size. Reverses the change of
+    minimize_mask().
 
     See inspect_data.ipynb notebook for more details.
     """
@@ -556,9 +557,9 @@ def generate_anchors(scales, ratios, shape, feature_stride, anchor_stride):
 
 def generate_pyramid_anchors(scales, ratios, feature_shapes, feature_strides,
                              anchor_stride):
-    """Generate anchors at different levels of a feature pyramid. Each scale
-    is associated with a level of the pyramid, but each ratio is used in
-    all levels of the pyramid.
+    """Generate anchors at different levels of a feature pyramid. Each scale is
+    associated with a level of the pyramid, but each ratio is used in all
+    levels of the pyramid.
 
     Returns:
     anchors: [N, (y1, x1, y2, x2)]. All generated anchors in one array. Sorted
@@ -579,13 +580,14 @@ def generate_pyramid_anchors(scales, ratios, feature_shapes, feature_strides,
 ############################################################
 
 def trim_zeros(x):
-    """It's common to have tensors larger than the available data and
-    pad with zeros. This function removes rows that are all zeros.
+    """It's common to have tensors larger than the available data and pad with
+    zeros. This function removes rows that are all zeros.
 
     x: [rows, columns].
     """
     assert len(x.shape) == 2
     return x[~np.all(x == 0, axis=1)]
+
 
 def compute_matches(gt_boxes, gt_class_ids, gt_masks,
                     pred_boxes, pred_class_ids, pred_scores, pred_masks,
@@ -645,6 +647,7 @@ def compute_matches(gt_boxes, gt_class_ids, gt_masks,
 
     return gt_match, pred_match, overlaps
 
+
 def compute_ap(gt_boxes, gt_class_ids, gt_masks,
                pred_boxes, pred_class_ids, pred_scores, pred_masks,
                iou_threshold=0.5):
@@ -687,30 +690,33 @@ def compute_ap(gt_boxes, gt_class_ids, gt_masks,
 def compute_ap_range(gt_box, gt_class_id, gt_mask,
                      pred_box, pred_class_id, pred_score, pred_mask,
                      iou_thresholds=None, verbose=1):
-    """Compute AP over a range or IoU thresholds. Default range is 0.5-0.95."""
+    """Compute AP over a range or IoU thresholds.
+
+    Default range is 0.5-0.95.
+    """
     # Default is 0.5 to 0.95 with increments of 0.05
     iou_thresholds = iou_thresholds or np.arange(0.5, 1.0, 0.05)
-    
+
     # Compute AP over range of IoU thresholds
     AP = []
     for iou_threshold in iou_thresholds:
         ap, precisions, recalls, overlaps =\
             compute_ap(gt_box, gt_class_id, gt_mask,
-                        pred_box, pred_class_id, pred_score, pred_mask,
-                        iou_threshold=iou_threshold)
+                       pred_box, pred_class_id, pred_score, pred_mask,
+                       iou_threshold=iou_threshold)
         if verbose:
-            print("AP @{:.2f}:\t {:.3f}".format(iou_threshold, ap))
+            print('AP @{:.2f}:\t {:.3f}'.format(iou_threshold, ap))
         AP.append(ap)
     AP = np.array(AP).mean()
     if verbose:
-        print("AP @{:.2f}-{:.2f}:\t {:.3f}".format(
+        print('AP @{:.2f}-{:.2f}:\t {:.3f}'.format(
             iou_thresholds[0], iou_thresholds[-1], AP))
     return AP
 
 
 def compute_recall(pred_boxes, gt_boxes, iou):
-    """Compute the recall at the given IoU threshold. It's an indication
-    of how many GT boxes were found by the given prediction boxes.
+    """Compute the recall at the given IoU threshold. It's an indication of how
+    many GT boxes were found by the given prediction boxes.
 
     pred_boxes: [N, (y1, x1, y2, x2)] in image coordinates
     gt_boxes: [N, (y1, x1, y2, x2)] in image coordinates
@@ -776,11 +782,12 @@ def download_trained_weights(coco_model_path, verbose=1):
     coco_model_path: local path of COCO trained weights
     """
     if verbose > 0:
-        print("Downloading pretrained model to " + coco_model_path + " ...")
+        print('Downloading pretrained model to ' + coco_model_path + ' ...')
     with urllib.request.urlopen(COCO_MODEL_URL) as resp, open(coco_model_path, 'wb') as out:
         shutil.copyfileobj(resp, out)
     if verbose > 0:
-        print("... done downloading pretrained model!")
+        print('... done downloading pretrained model!')
+
 
 class Timer(object):
     def __init__(self, name=None):

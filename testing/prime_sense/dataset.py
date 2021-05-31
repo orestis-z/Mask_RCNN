@@ -1,21 +1,21 @@
-import os, sys
-import math
+import os
+import sys
+
 import numpy as np
 import skimage.io
-import cv2
 from PIL import Image
 
 # Root directory of the project
-ROOT_DIR = os.path.abspath("../..")
+ROOT_DIR = os.path.abspath('../..')
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+import utils
 from instance_segmentation.object_config import Config
 
-import utils
 
 class ObjectsConfig(Config):
-    NAME = "prime_sense"
+    NAME = 'prime_sense'
     # NAME = "seg_ADE20K"
 
     MODE = 'RGBD'
@@ -29,15 +29,16 @@ class ObjectsConfig(Config):
     # Image mean (RGBD)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9, 1220.7])
 
+
 class ObjectsDataset(utils.Dataset):
     def load(self, dataset_dir, skip=19):
         # Add classes
-        self.add_class("prime_sense", 1, "object")
+        self.add_class('prime_sense', 1, 'object')
         count = 0
         # Add images
         for i, (root, dirs, files) in enumerate(os.walk(dataset_dir)):
             root_split = root.split('/')
-            if root_split[-1] == 'image': # and subset in root_split:
+            if root_split[-1] == 'image':  # and subset in root_split:
                 for j, file in enumerate(files):
                     if j % (skip + 1) == 0:
                         parentRoot = '/'.join(root.split('/')[:-1])
@@ -49,7 +50,7 @@ class ObjectsDataset(utils.Dataset):
                                 im = Image.open(path)
                                 width, height = im.size
                                 self.add_image(
-                                    "prime_sense",
+                                    'prime_sense',
                                     image_id=i,
                                     path=path,
                                     depth_path=depth_path,
@@ -57,12 +58,12 @@ class ObjectsDataset(utils.Dataset):
                                     height=height)
                                 count += 1
                         else:
-                            print('Warning: No depth or mask found for ' + path)
+                            print(
+                                'Warning: No depth or mask found for ' + path)
         print('added {} images'.format(count))
 
     def load_image(self, image_id, depth=True):
-        """Load the specified image and return a [H,W,3+1] Numpy array.
-        """
+        """Load the specified image and return a [H,W,3+1] Numpy array."""
         # Load image & depth
         image = super(ObjectsDataset, self).load_image(image_id)
         if depth:
@@ -71,6 +72,7 @@ class ObjectsDataset(utils.Dataset):
             return rgbd
         else:
             return image
+
 
 if __name__ == '__main__':
     dataset = ObjectsDataset()

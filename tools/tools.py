@@ -1,14 +1,17 @@
-import os, sys
+import os
 import zipfile
-from skimage import io
-import numpy as np
 from pprint import pprint
+
+import numpy as np
+from skimage import io
 from tqdm import tqdm
+
 
 def unzip(file, dest):
     zip_ref = zipfile.ZipFile(file, 'r')
     zip_ref.extractall(dest)
     zip_ref.close()
+
 
 def shrink(path, freq):
     for root, dirs, files in os.walk(path):
@@ -17,13 +20,14 @@ def shrink(path, freq):
             if i % freq != 0 and file[-4:] == '.png':
                 os.remove(os.path.join(root, file))
 
+
 def compute_RGB_mean(path):
     file_list = os.listdir(path)
     n_files = len(file_list)
     R_mean = np.zeros(n_files)
     G_mean = np.zeros(n_files)
     B_mean = np.zeros(n_files)
-    
+
     count = 0
     for i, file in enumerate(tqdm(file_list)):
         assert(file[-4:] in ['.jpg', '.png'])
@@ -41,11 +45,12 @@ def compute_RGB_mean(path):
 
     return (np.nanmean(R_mean), np.nanmean(G_mean), np.nanmean(B_mean), count)
 
+
 def compute_depth_mean(path, depth=False):
     file_list = os.listdir(path)
     n_files = len(file_list)
     D_mean = np.zeros(n_files)
-    
+
     count = 0
     for i, file in enumerate(tqdm(file_list)):
         assert(file[-4:] in ['.jpg', '.png'])
@@ -58,6 +63,7 @@ def compute_depth_mean(path, depth=False):
             D_mean[i] = np.nan
 
     return (np.nanmean(D_mean), count)
+
 
 def count_files(path):
     n_files = []

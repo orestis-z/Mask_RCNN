@@ -1,6 +1,7 @@
-import sys, os
+import os
+import sys
 
-parent_dir = os.path.abspath("..")
+parent_dir = os.path.abspath('..')
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
@@ -15,6 +16,7 @@ def unzip_all(path, dest):
             tools.unzip(file_path, dest)
             os.remove(file_path)
 
-if __name__ == "__main__":
-  args = sys.argv[1:3]
-  unzip_all(*args)
+
+if __name__ == '__main__':
+    args = sys.argv[1:3]
+    unzip_all(*args)
